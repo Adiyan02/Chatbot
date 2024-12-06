@@ -82,7 +82,7 @@ def chat():
                                 },
                                 "datetime": {
                                     "type": "string",
-                                    "description": "Datum und Uhrzeit des Vorfalls"
+                                    "description": "Datum und Uhrzeit des Vorfalls in dem Format, '%Y-%m-%dT%H:%M:%S' "
                                 },
                                 "company": {
                                     "type": "string",
@@ -121,9 +121,17 @@ def chat():
                     "function": {
                         "name": "extract_ticket_info",
                     "arguments": (
-                        "Bitte formuliere die Antwort wie folgt:\n"
-                        "1. **Grund für die Zuordnung zum Fahrer:** Erkläre, warum es sich um diesen Fahrer handeln könnte, zum Beispiel, weil er oder sie das Fahrzeug genutzt hat und im Fahrzeugraum gearbeitet hat..\n"
+                        "Bitte formuliere die Antwort wie folgt:\n\n"
+                        "if(falls du einen Fahrer gefunden hast der zu einem Schicht passt)"
+                        "1. **Grund für die Zuordnung zum Fahrer:** Erkläre, warum es sich um diesen Fahrer handeln könnte, zum Beispiel, weil er oder sie das Fahrzeug genutzt hat und im Fahrzeugraum gearbeitet hat..\n\n"
                         "2. **Fahrerinformationen:** Gib unten die Informationen über den Fahrer an. Die Relvenat sind für die Fahrer Idetifizierung. Unternehmenname (die gefunden wurde), Name, Nachname, Adresse, Geburtsdatum, Geburtsort, falls die Informationen fehlen bitte angebn.\n\n"
+                        "3. Frage dann dem Nutzer, ob du einen Mail Vorlage schreiben sollst, um der Polizei behörde zu sagen das es der Fahrer war, mit den Daten, Vorname, Nachname, Adresse, Poslteitzahl/Ort, Geburtdatum und Ort.\n\n"
+                        "else if(falls du keinen direkt pasenden Schicht gefunden hast)"
+                        "1. **Keinen passenden Fahrer gefunden**: Warum du kein passenden Fahrer gefunden hast\n\n"
+                        "2. **Schichten gefunden kurz vor oder nach dem Datum:** Bitte gebe Hier an, wer die Fahrer sind die kurz Vor oder Nach dem Datum gerarbeitet haben, mit den Persönlichen daten, details\n\n"
+                        "3. **Fahrer die zu diesem Fahrzeug zu gewiesen sind:** Gebe alle Fahrer an Die zu dem Fahrzeug gehören, mit Nummerierung\n\n"
+                        "4. Frage dann dem Nutzer, ob du einen Mail Vorlage schreiben sollst, um der Polizei behörde zu sagen das es der Fahrer war, mit den Daten, Vorname, Nachname, Adresse, Poslteitzahl/Ort, Geburtdatum und Ort. Aber Frage auch welche Fahrer der Nutzer denkt das es der Fahrer ist, weil der Nutzer entscheidet dann, über den Fahrer\n\n"
+                        "Else"
                         " Falls keine Schichten gefunden wurden für die Zeit, dann sage bitte das du keinen passenden fahrer finden konntest, der um die Uhrezti gearbeitet hat."
                         + tool_call.function.arguments
                     )            }

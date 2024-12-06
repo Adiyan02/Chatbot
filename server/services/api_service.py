@@ -14,7 +14,8 @@ AUTHORIZATION_HEADER = {
 def get_filtered_vehicles(company_id):
     url = "https://test-api.meinfahrer.app/api/v1/admin/vehicle/getAll"
     payload = {
-        "sorting": {"model": 1}
+        "companies": [company_id],
+        "page_size": 200,
     }
 
     try:
@@ -38,15 +39,46 @@ def get_filtered_vehicles(company_id):
         logger.error(f"Exception in get_filtered_vehicles: {str(e)}")
         return None
 
-def get_shift(date, vehicle):
+def get_driver_by_company_vehicle(vehicle_id, company_id):
+    url = "https://test-api.meinfahrer.app/api/v1/admin/user/getAll"
+    payload = {
+        "page_size": 200,
+        "vehicle":  vehicle_id,
+        "company": company_id,
+    }
+    print("payloadUer: ",payload)
+
+    try:
+        response = requests.post(url, headers=AUTHORIZATION_HEADER, json=payload)
+        if response.status_code == 200:
+            data = response.json()
+            print("userData: ", data)
+            users = data.get("data", {}).get("users", [])
+            print("users: ", users)
+            users = [
+                {
+                    "fullName": c.get("fullName"),
+                } for c in users
+            ]
+            return users
+        else:
+            logger.error(f"Error fetching vehicles: {response.status_code}, {response.text}")
+            return None
+    except Exception as e:
+        logger.error(f"Exception in get_filtered_vehicles: {str(e)}")
+        return None
+
+
+def get_shift(date, vehicle, companyID):
     vehicle = json.loads(vehicle)
     date_obj = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S")
-    start_window = date_obj - timedelta(days=1)
-    end_window = date_obj + timedelta(days=1)
+    start_window = date_obj - timedelta(days=2)
+    end_window = date_obj + timedelta(days=2)
     driver_info_list = []
 
     url = "https://test-api.meinfahrer.app/api/v1/admin/shift/getAll"
     payload = {
+        "company": companyID,
         "vehicle": vehicle['id'],
         "startDate": start_window.strftime("%Y-%m-%d"),
         "endDate": end_window.strftime("%Y-%m-%d"),
@@ -57,33 +89,58 @@ def get_shift(date, vehicle):
         response = requests.post(url, headers=AUTHORIZATION_HEADER, json=payload)
         if response.status_code == 200:
             shifts = response.json().get('data', {}).get('shifts', [])
+            if not shifts:
+                return []
+
+            # Listen für Schichten vor und nach dem angegebenen Datum
+            shifts_before = []
+            shifts_after = []
+            exact_shifts = []
+
             for shift in shifts:
                 shift_start_str = shift.get('startDate')
                 shift_end_str = shift.get('endDate')
                 if shift_start_str and shift_end_str:
                     shift_start = datetime.strptime(shift_start_str, "%Y-%m-%dT%H:%M:%S.%fZ")
                     shift_end = datetime.strptime(shift_end_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+
+                    driver = shift.get('driver', {})
+                    driver_info = {
+                        'first_name': driver.get('firstName', ''),
+                        'last_name': driver.get('lastName', ''),
+                        'date_of_birth': driver.get('dateOfBirth', ''),
+                        'full_address': driver.get('streetAndHouseNumber', ''),
+                        'postal_code_city': driver.get('postalCodeCityDistrict', ''),
+                        'shift_start': shift_start_str,
+                        'shift_end': shift_end_str,
+                        'place_of_birth': driver.get('placeOfBirth', ''),
+                    }
+
                     if shift_start <= date_obj <= shift_end:
-                        driver = shift.get('driver', {})
-                        driver_info = {
-                            'first_name': driver.get('firstName', ''),
-                            'last_name': driver.get('lastName', ''),
-                            'date_of_birth': driver.get('dateOfBirth', ''),
-                            'full_address': driver.get('streetAndHouseNumber', {}),
-                            'postal_code_city': driver.get('postalCodeCityDistrict', ''),
-                            'shift_start': shift_start_str,
-                            'shift_end': shift_end_str,
-                            'postal_code': driver.get('placeOfBirth', ''),
-                        }
-                        driver_info_list.append(driver_info)
-            return driver_info_list
+                        exact_shifts.append(driver_info)
+                    elif shift_end < date_obj:
+                        shifts_before.append((shift_end, driver_info))
+                    elif shift_start > date_obj:
+                        shifts_after.append((shift_start, driver_info))
+
+            # Sortieren der Schichten nach Nähe zum Datum
+            shifts_before.sort(key=lambda x: date_obj - x[0])
+            shifts_after.sort(key=lambda x: x[0] - date_obj)
+
+            result = {
+                'exact_shifts': exact_shifts,
+                'shifts_before': [info for _, info in shifts_before],
+                'shifts_after': [info for _, info in shifts_after]
+            }
+
+            return result
         else:
             logger.error(f"Error fetching shifts: {response.status_code}, {response.text}")
             return None
     except Exception as e:
         logger.error(f"Exception in get_shift: {str(e)}")
         return None
-
+        
 def determine_company(user_input, company_list):
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -217,20 +274,56 @@ def get_filtered_companies():
         logger.error(f"Exception in get_filtered_companies: {str(e)}")
         return None
 
+
 def extract_ticket_info(user_input_license_plate, user_input_datetime, user_input_company):
     all_companies = get_filtered_companies()
     company = determine_company(user_input_company, all_companies)
     company = json.loads(company)
     if not company.get('id'):
-            return "Kein Unternehmen gefunden zu dem Namen: " + user_input_company 
+        return f"Kein Unternehmen gefunden zu dem Namen: {user_input_company}"
+    
     all_filtered_vehicles = get_filtered_vehicles(company['id'])
     vehicle_plate = determine_vehicle(user_input_license_plate, all_filtered_vehicles)
-    driver_list = get_shift(user_input_datetime, vehicle_plate)
+    driver_shifts = get_shift(user_input_datetime, vehicle_plate, company['id'])
 
-    if not driver_list:
-        return "Keine Schichten gefunden für die Zeit"
+    if not driver_shifts:
+        return "Keine Schichten gefunden."
 
-    return (
-        f"Die Rückgabewerte sind: Firmenname: {company['name']}, "
-        f"Fahrzeug: {vehicle_plate}, Fahrer: {driver_list[0]}"
-    )
+    exact_shifts = driver_shifts.get('exact_shifts', [])
+    shifts_before = driver_shifts.get('shifts_before', [])
+    shifts_after = driver_shifts.get('shifts_after', [])
+
+    if exact_shifts:
+        driver_info = exact_shifts[0]
+        return (
+            f"Die Rückgabewerte sind:\n"
+            f"Firmenname: {company['name']}\n"
+            f"Fahrzeug: {vehicle_plate}\n"
+            f"Fahrer: {driver_info}"
+        )
+    else:
+        response = f"Keine Schichten gefunden zum genauen Zeitpunkt.\n"
+        potential_drivers = []
+        associated_driver_to_vehicle = []
+        if shifts_before:
+            response += "Mögliche Fahrer vor dem Zeitpunkt:\n"
+            for driver_info in shifts_before[:3]:  # Nimmt die ersten drei Schichten davor
+                potential_drivers.append(driver_info)
+                response += f"{driver_info}\n"
+
+        if shifts_after:
+            response += "Mögliche Fahrer nach dem Zeitpunkt:\n"
+            for driver_info in shifts_after[:3]:  # Nimmt die ersten drei Schichten danach
+                potential_drivers.append(driver_info)
+                response += f"{driver_info}\n"
+        
+        drivers_that_accosiated_with_that_car = get_driver_by_company_vehicle(json.loads(vehicle_plate)['id'], company['id'])
+        print("drivers_that_accosiated_with_that_car: ",drivers_that_accosiated_with_that_car)
+        associated_driver_to_vehicle = [driver for driver in drivers_that_accosiated_with_that_car]
+
+        if(associated_driver_to_vehicle):
+            response += f"Alle Fahrer die zu dem Auto zugeordnet sind: {associated_driver_to_vehicle}\n"
+        if not potential_drivers:
+            response += "Keine potenziellen Fahrer gefunden."
+
+        return response

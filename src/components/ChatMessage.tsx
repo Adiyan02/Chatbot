@@ -41,9 +41,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
       >
         {/* "Tippen"-Nachricht anzeigen */}
         {isTyping ? (
-          <div className="flex space-x-1">
-            <span className="w-2 h-2 bg-gray-600 rounded-full animate-bounce"></span>
-            <span className="w-2 h-2 bg-gray-600 rounded-full animate-bounce animation-delay-200"></span>
+          <div className="flex space-x-1 pt-1">
+          <span className="w-2  h-2 bg-gray-600 rounded-full animate-bounce"></span>
+            <span className="w-2  h-2 bg-gray-600 rounded-full animate-bounce animation-delay-200"></span>
             <span className="w-2 h-2 bg-gray-600 rounded-full animate-bounce animation-delay-400"></span>
           </div>
         ) : (

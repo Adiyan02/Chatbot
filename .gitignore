@@ -7,13 +7,12 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 server/myenv
-server/__pycache__
 node_modules
 dist
 dist-ssr
 *.local
 .bolt
-
+*__pycache__
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -24,3 +23,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+*.env
+

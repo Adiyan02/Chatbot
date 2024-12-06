@@ -124,6 +124,8 @@ function App() {
 
         setMessages((prev) => [...prev, ...newMessages]);
       } else {
+        setMessages((prev) => prev.filter(msg => msg.id !== 'typing'));
+
         setMessages((prev) => [
           ...prev,
           {
