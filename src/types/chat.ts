@@ -33,5 +33,7 @@ export interface ChatRequest {
     content?: string | { type: string; text: string }[] | { arguments?: string; name?: string };
     function_name?: string;
     tool_call_id?: string;
-    tool_calls?: ToolCall[]}[];
+    tool_calls?: ToolCall[]
+  }[];
+  threadId?: string;
 }

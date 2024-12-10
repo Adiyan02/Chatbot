@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Message,ChatRequest } from './types/chat';
+import { Message, ChatRequest } from './types/chat';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatInput } from './components/ChatInput';
 import { sendMessage } from './utils/api';
@@ -16,13 +16,16 @@ function App() {
   ]);
   const [isProcessing, setIsProcessing] = useState(false);
 
-    // Temporäre "Tippen"-Nachricht hinzufügen
-    const typingMessage: Message = {
-      id: 'typing', // Eine eindeutige ID für die "Tippen"-Nachricht
-      role: 'assistant',
-      isTyping: true, // Kennzeichne diese Nachricht als "Tippen"
-      timestamp: new Date(),
-    };
+  // NEU: State für threadId
+  const [threadId, setThreadId] = useState<string | null>(null);
+
+  const typingMessage: Message = {
+    id: 'typing',
+    role: 'assistant',
+    isTyping: true,
+    timestamp: new Date(),
+  };
+
   const handleSendMessage = async (content: string) => {
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -35,84 +38,38 @@ function App() {
     setIsProcessing(true);
 
     try {
-      const chatverlauf: Message[] = messages.map((msg) => ({
-        id: msg.id,
-        role: msg.role,
-        content: msg.content,
-        timestamp: msg.timestamp,
-        function_name: msg.function_name,
-        tool_call_id: msg.tool_call_id,
-        tool_calls: msg.tool_calls,
-      }));
+      const lastUserMessage = userMessage;
 
-      // Füge die aktuelle Nachricht hinzu
-      chatverlauf.push({
-        role: 'user',
-        content: [{ type: 'text', text: content }],
-        function_name: undefined,
-        tool_call_id: undefined,
-        id: "",
-        timestamp: undefined
-      });
+      const chatRequest: ChatRequest = {
+        chatverlauf: [lastUserMessage],
+      };
 
-      const chatRequest: ChatRequest = { chatverlauf };
+      // Wenn bereits eine threadId existiert, mitgeben
+      if (threadId) {
+        chatRequest.threadId = threadId;
+      }
+
       const response = await sendMessage(chatRequest);
+
+      // Beispielhafte Response-Struktur:
+      // {
+      //   success: true,
+      //   response: {
+      //     id: "THREAD_ID", // threadId, die vom Backend kommt
+      //     message: "Antwort des Assistenten"
+      //   }
+      // }
+      
+      setMessages((prev) => prev.filter((msg) => msg.id !== 'typing'));
+
       if (response.success) {
-        const { message, tools_used } = response.response;
+        // Wenn noch keine threadId und die API liefert eine, dann hier setzen
+        if (!threadId && response.response.id) {
+          setThreadId(response.response.id);
+        }
 
-        // Mapping von tool_call_id zu function_name erstellen
-        const toolCallIdToFunctionName: Record<string, string> = {};
-        setMessages((prev) => prev.filter(msg => msg.id !== 'typing'));
+        const { message } = response.response;
 
-        const newMessages: Message[] = [];
-
-        tools_used?.forEach((tool: any) => {
-          if (tool.role === 'assistant' && tool.tool_calls?.length > 0) {
-            const toolCall = tool.tool_calls[0];
-
-            const functionName = toolCall.function?.name || 'Unbekanntes Tool';
-            const toolCallId = toolCall.id || 'Unbekannte ID';
-            const arguments_list = toolCall.function.arguments|| 'Unbekannte ID';
-
-            // Mapping speichern
-            toolCallIdToFunctionName[toolCallId] = functionName;
-            const toolCallMessage: Message = {
-              id: Date.now().toString(),
-              role: 'assistant',
-              tool_calls: [
-                {
-                  id: toolCallId,
-                  type: "function",
-                  function: {
-                    name: functionName,
-                    arguments: arguments_list,
-                  },
-                },
-              ],
-              timestamp: new Date(),
-            };
-
-            newMessages.push(toolCallMessage);
-          }
-
-          if (tool.role === 'tool') {
-            const toolCallId = tool.tool_call_id;
-
-            // function_name aus dem Mapping abrufen
-
-            const toolResponseMessage: Message = {
-              id: Date.now().toString(),
-              role: 'tool',
-              tool_call_id: toolCallId,
-              content: tool.content,
-              timestamp: new Date(),
-            };
-
-            newMessages.push(toolResponseMessage);
-          }
-        });
-
-        // Assistent-Antwort hinzufügen
         const assistantMessage: Message = {
           id: Date.now().toString(),
           role: 'assistant',
@@ -120,12 +77,8 @@ function App() {
           timestamp: new Date(),
         };
 
-        newMessages.push(assistantMessage);
-
-        setMessages((prev) => [...prev, ...newMessages]);
+        setMessages((prev) => [...prev, assistantMessage]);
       } else {
-        setMessages((prev) => prev.filter(msg => msg.id !== 'typing'));
-
         setMessages((prev) => [
           ...prev,
           {
@@ -137,7 +90,7 @@ function App() {
         ]);
       }
     } catch (error) {
-      setMessages((prev) => prev.filter(msg => msg.id !== 'typing'));
+      setMessages((prev) => prev.filter((msg) => msg.id !== 'typing'));
       setMessages((prev) => [
         ...prev,
         {
@@ -159,7 +112,7 @@ function App() {
         <div className="max-w-4xl mx-auto flex items-center gap-2">
           <Car className="w-8 h-8 text-blue-500" />
           <h1 className="text-xl font-semibold text-gray-800">
-            Assistent für Ihr Unternehmen
+            FahrerApp Assistent
           </h1>
         </div>
       </header>
