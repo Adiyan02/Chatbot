@@ -4,6 +4,8 @@ import logging
 import json
 import io
 import re
+import os
+from werkzeug.utils import secure_filename
 
 from services.openai_service import client
 from services.api_service import (
@@ -21,6 +23,10 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 CORS(app)  # Erlaubt standardmäßig alle Origins
+
+UPLOAD_FOLDER = 'uploads'
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
 def update_annotations(annotations, text_value,  base_url="http://127.0.0.1:5000"):
     # Iterate over content to find annotations and update paths
@@ -100,18 +106,35 @@ def download_file():
 def chat():
     try:
         data = request.get_json()
-        user_message = data.get("chatverlauf")[0].get('text')
+        print("Received data:", data)
+        
+        # Erstelle die Nachricht mit Text
+        user_message = [{
+            "type": "text", 
+            "text": data.get("chatverlauf").get('text').get('text')
+        }]
+        
+        # Füge Bilder hinzu, falls vorhanden
+        if data.get("chatverlauf").get('files'):
+            for file in data.get("chatverlauf").get('files'):
+                if file.get('type') == 'image_file':
+                    user_message.append({
+                        "type": "image_file",
+                        "image_file": {
+                            "file_id": file.get('data')
+                        }
+                    })
+
         thread_id = data.get("thread_id")
         tools_used = []
         text_message = ""
 
-        user_message =  user_message
         thread = client.beta.threads.create()
         message = client.beta.threads.messages.create(
-                    thread_id = thread_id or thread.id,
-                    role="user",
-                    content=user_message
-                    )
+            thread_id=thread_id or thread.id,
+            role="user",
+            content=user_message
+        )
         run = client.beta.threads.runs.create_and_poll(
                 thread_id = thread_id or thread.id,
                 assistant_id="asst_SUrRky1PsAt8CJFySbv7fZvf",
@@ -210,6 +233,39 @@ def chat():
 @app.route('/files/<filename>')
 def serve_file(filename):
     return send_from_directory('static/files', filename)
+
+@app.route('/api/upload', methods=['POST'])
+def upload_file():
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'Keine Datei gefunden'}), 400
+            
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'Keine Datei ausgewählt'}), 400
+
+        if file:
+            # Datei temporär speichern
+            temp_path = os.path.join(UPLOAD_FOLDER, secure_filename(file.filename))
+            file.save(temp_path)
+            
+            # OpenAI File erstellen
+            with open(temp_path, 'rb') as file_data:
+                openai_file = client.files.create(
+                    file=file_data,
+                    purpose="vision"
+                )
+            
+            # Temporäre Datei löschen
+            os.remove(temp_path)
+            
+            return jsonify({
+                'success': True,
+                'file_id': openai_file.id
+            })
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
