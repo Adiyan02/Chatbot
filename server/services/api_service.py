@@ -199,57 +199,60 @@ def determine_company(user_input, company_list):
 def determine_vehicle(user_input, vehicles):
     # OpenAI-Aufruf
     completion = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "You are an intelligent assistant that helps identify vehicles based on user input. "
-                    "You are provided with a list of vehicles and their IDs. Match the user input (license plate) "
-                    "to the most likely vehicle and return the name and ID in JSON format."
-                )
-            },
-            {
-                "role": "assistant",
-                "content": f"The following is the list of vehicles: {vehicles}"
-            },
-            {
-                "role": "user",
-                "content": f"I want to find the vehicle with license plate: {user_input}"
-            }
-        ],
-        response_format={
-            "type": "json_schema",
-            "json_schema": {
-                "name": "identified_vehicle",
-                "schema": {
-                    "type": "object",
-                    "strict": True,
-                    "properties": {
-                        "model": {
-                            "type": "string",
-                            "description": "The model of the identified vehicle."
-                        },
-                        "plate": {
-                            "type": "string",
-                            "description": "The plate of the identified vehicle."
-                        },
-                        "id": {
-                            "type": "string",
-                            "description": "The unique ID of the identified vehicle."
-                        }
-                    },
-                    "required": ["model","plate","id"],
-                    "additionalProperties": False
-                }
-            }
+    model="gpt-4o-mini",
+    messages=[
+        {
+            "role": "system",
+            "content": (
+                "You are an intelligent assistant tasked with identifying vehicles based on user-provided license plate input. "
+                "You are provided with a list of vehicles and their details, including license plates in various formats. "
+                "Your task is to match the user input to the most likely vehicle by identifying similarities in the license plate, "
+                "even if the format varies (e.g., 'B-E-1234' is the same as 'BE1234' or 'b-e123'). "
+                "If no match can be found with reasonable confidence, return a clear response indicating that no matching vehicle was found for the specified company."
+            )
         },
+        {
+            "role": "assistant",
+            "content": f"The following is the list of vehicles: {vehicles}"
+        },
+        {
+            "role": "user",
+            "content": f"I want to find the vehicle with license plate, if there is any Information about: {user_input}"
+        }
+    ],
+    response_format={
+        "type": "json_schema",
+        "json_schema": {
+            "name": "identified_vehicle",
+            "schema": {
+                "type": "object",
+                "strict": True,
+                "properties": {
+                    "model": {
+                        "type": "string",
+                        "description": "The model of the identified vehicle, if found else return empty string."
+                    },
+                    "plate": {
+                        "type": "string",
+                        "description": "The plate of the identified vehicle, if found else return empty string."
+                    },
+                    "id": {
+                        "type": "string",
+                        "description": "The unique ID of the identified vehicle, if found else return empty string."
+                    }
+                },
+                "required": ["model", "plate", "id"],
+                "additionalProperties": False
+            }
+        }
+    },
         temperature=0.7,
         max_tokens=200,
         top_p=1,
         frequency_penalty=0,
         presence_penalty=0
     )
+    #print("completion: ",completion.choices[0].message.content)
     return completion.choices[0].message.content  # Gibt die JSON-Antwort zurück
 
 def get_filtered_companies():
@@ -276,14 +279,16 @@ def get_filtered_companies():
 
 
 def extract_ticket_info(user_input_license_plate, user_input_datetime, user_input_company):
-    all_companies = get_filtered_companies()
-    company = determine_company(user_input_company, all_companies)
-    company = json.loads(company)
+ #   all_companies = get_filtered_companies()
+#    company = determine_company(user_input_company, all_companies)
+    company = user_input_company
     if not company.get('id'):
         return f"Kein Unternehmen gefunden zu dem Namen: {user_input_company}"
     
     all_filtered_vehicles = get_filtered_vehicles(company['id'])
     vehicle_plate = determine_vehicle(user_input_license_plate, all_filtered_vehicles)
+    if not vehicle_plate:
+        return "Kein Fahrzeug gefunden."
     driver_shifts = get_shift(user_input_datetime, vehicle_plate, company['id'])
 
     if not driver_shifts:

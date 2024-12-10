@@ -55,7 +55,7 @@ def update_annotations(annotations, text_value,  base_url="http://127.0.0.1:5000
             files_mapping = {
                 "files": [
                     {
-                        "id": "file-Go9rW5UsfoDVcw8QZHFyxa",
+                        "id": "file-LSw5k1p5KY8wWU2fY8iagM",
                         "name": "FA Nutzeranleitung.pdf",
                         "path": f"{base_url}/files/FA%20Nutzeranleitung.pdf"
                     }
@@ -113,6 +113,8 @@ def chat():
             "type": "text", 
             "text": data.get("chatverlauf").get('text').get('text')
         }]
+        company = data.get("companies")[0]
+        print("company: ",company)
         
         # Füge Bilder hinzu, falls vorhanden
         if data.get("chatverlauf").get('files'):
@@ -162,22 +164,22 @@ def chat():
         else:
             print(run.status)
         tool_outputs = []
+        if run.required_action.submit_tool_outputs:
+            # Loop through each tool in the required action section
+            for tool in run.required_action.submit_tool_outputs.tool_calls:
+                if tool.function.name == "extract_ticket_info":
+                    print("tool.function.arguments: ", tool.function.arguments)
+                    arguments = json.loads(tool.function.arguments)
 
-        # Loop through each tool in the required action section
-        for tool in run.required_action.submit_tool_outputs.tool_calls:
-            if tool.function.name == "extract_ticket_info":
-                print("tool.function.arguments: ", tool.function.arguments)
-                arguments = json.loads(tool.function.arguments)
-
-                extracted_info = extract_ticket_info(
-                    arguments.get("license_plate"),
-                    arguments.get("datetime"),
-                    arguments.get("company")
-                )
-                tool_outputs.append({
-                "tool_call_id": tool.id,
-                "output": "daten die gfeunden wurden: " + extracted_info + "\n\n"
-                "Bitte formuliere die Antwort wie folgt:\n\n"
+                    extracted_info = extract_ticket_info(
+                        arguments.get("license_plate"),
+                        arguments.get("datetime"),
+                        company
+                    )
+                    tool_outputs.append({
+                    "tool_call_id": tool.id,
+                    "output": "daten die gfeunden wurden: " + extracted_info + "\n\n"
+                    "Bitte formuliere die Antwort wie folgt:\n\n"
                             "if(falls du einen Fahrer gefunden hast der zu einem Schicht passt)"
                             "1. **Grund für die Zuordnung zum Fahrer:** Erkläre, warum es sich um diesen Fahrer handeln könnte, zum Beispiel, weil er oder sie das Fahrzeug genutzt hat und im Fahrzeugraum gearbeitet hat..\n\n"
                             "2. **Fahrerinformationen:** Gib unten die Informationen über den Fahrer an. Die Relvenat sind für die Fahrer Idetifizierung. Unternehmenname (die gefunden wurde), Name, Nachname, Adresse, Geburtsdatum, Geburtsort, falls die Informationen fehlen bitte angebn.\n\n"
@@ -188,7 +190,7 @@ def chat():
                             "3. **Fahrer die zu diesem Fahrzeug zu gewiesen sind:** Gebe alle Fahrer an Die zu dem Fahrzeug gehören, mit Nummerierung\n\n"
                             "4. Frage dann dem Nutzer, ob du einen Mail Vorlage schreiben sollst, um der Polizei behörde zu sagen das es der Fahrer war, mit den Daten, Vorname, Nachname, Adresse, Poslteitzahl/Ort, Geburtdatum und Ort. Aber Frage auch welche Fahrer der Nutzer denkt das es der Fahrer ist, weil der Nutzer entscheidet dann, über den Fahrer\n\n"
                             "Else"
-                            " Falls keine Schichten gefunden wurden für die Zeit, dann sage bitte das du keinen passenden fahrer finden konntest, der um die Uhrezti gearbeitet hat."
+                            " Falls keine Schichten gefunden wurden für die Zeit, dann sage bitte das du keinen passenden fahrer finden konntest, weil keine .. gefunden ist."
                 })
 
         if tool_outputs:
