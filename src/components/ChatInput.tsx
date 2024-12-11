@@ -5,9 +5,10 @@ import { uploadFile } from '../utils/api';
 interface ChatInputProps {
   onSendMessage: (message?: string, files?: File[]) => void;
   disabled?: boolean;
+  InputMessage: string;
 }
 
-export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled }) => {
+export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled, InputMessage }) => {
   const [input, setInput] = useState('');
   const [selectedFile, setSelectedFile] = useState<File[] | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -129,7 +130,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled })
           value={input}
           onChange={(e) => setInput(e.target.value)}
           disabled={disabled}
-          placeholder="Nachricht eingeben..."
+          placeholder={InputMessage}
           rows={1}
           style={{ minHeight: '44px', height: 'auto', maxHeight: '200px' }}
           onInput={(e) => {

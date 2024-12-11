@@ -30,6 +30,18 @@ export const Chatbot: React.FC<ChatbotProps> = ({
     ar: `مرحبًا، ${user.name}! كيف يمكنني ساعدتك؟`,
     tr: `Merhaba, ${user.name}! Size nasıl yardımcı olabilirim?`
   };
+  const greetingsTitle: Record<SupportedLanguages, string> = {
+    de: `Support Chat`,
+    en: `Support Chat`,
+    ar: `دردشة الدعم`,
+    tr: `Destek Chat`
+  };
+  const greetingsInputMessage: Record<SupportedLanguages, string> = {
+    de: `Nachricht eingeben...`,
+    en: `Enter message...`,
+    ar: `اكتب رسالة...`,
+    tr: `Mesaj girin...`
+  };
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -196,7 +208,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({
             {/* Header */}
             <div className="flex items-center justify-between bg-blue-500 text-white p-4 rounded-none sm:rounded-t-lg">
               <div className="flex items-center gap-4">
-                <h2 className="font-semibold">Support Chat</h2>
+                <h2 className="font-semibold">{greetingsTitle[user.lang]}</h2>
                 {!isDriver && (
                   <div className="relative group">
                     <select
@@ -271,6 +283,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({
                   <ChatInput
                     onSendMessage={handleSendMessage}
                     disabled={isProcessing}
+                    InputMessage={greetingsInputMessage[user.lang]}
                   />
                 </div>
               </div>

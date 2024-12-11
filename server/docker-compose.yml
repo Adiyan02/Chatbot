@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  backend:
+    build: 
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./server:/app
+      - ./server/uploads:/app/uploads
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - AUTHORIZATION=${AUTHORIZATION}
+    restart: unless-stopped
