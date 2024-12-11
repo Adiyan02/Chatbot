@@ -111,14 +111,14 @@ def chat():
         # Erstelle die Nachricht mit Text
         user_message = [{
             "type": "text", 
-            "text": data.get("chatverlauf").get('text').get('text')
+            "text": data.get("chatverlauf").get("content").get("text").get("text"),
         }]
         company = data.get("companies")[0]
         print("company: ",company)
         
         # Füge Bilder hinzu, falls vorhanden
-        if data.get("chatverlauf").get('files'):
-            for file in data.get("chatverlauf").get('files'):
+        if data.get("chatverlauf").get("content").get('files'):
+            for file in data.get("chatverlauf").get("content").get('files'):
                 if file.get('type') == 'image_file':
                     user_message.append({
                         "type": "image_file",
@@ -130,17 +130,58 @@ def chat():
         thread_id = data.get("thread_id")
         tools_used = []
         text_message = ""
-
-        thread = client.beta.threads.create()
+        thread = None
+        if not thread_id:
+            thread = client.beta.threads.create()
         message = client.beta.threads.messages.create(
             thread_id=thread_id or thread.id,
             role="user",
-            content=user_message
-        )
+            content=user_message,
+           )
         run = client.beta.threads.runs.create_and_poll(
                 thread_id = thread_id or thread.id,
                 assistant_id="asst_SUrRky1PsAt8CJFySbv7fZvf",
-                #instructions="Please address the user as Jane Doe. The user has a premium account."
+                instructions=
+                "Du bist ein virtueller Assistent, der als Plugin für die Fahrer-App eines Unternehmens dient, um effizient mit Daten umzugehen und verschiedene betriebliche Aufgaben zu unterstützen."
+                "Zuordnung von Strafzetteln zu Fahrern: Identifiziere den Fahrer, dem ein Strafzettel zugeordnet werden muss."
+                "Bereitstellung von Anleitungen: Gib klare Anweisungen für gängige Unternehmensabläufe."
+                "Abfragen zu Schichtplänen: Beantworte Anfragen zu den Schichtplänen der Fahrer."
+                "Umsatzberechnungen: Berechne den Umsatz basierend auf den Betriebsdaten."
+                "Fahrerbewertung: Analysiere die Leistung der Fahrer und identifiziere, welche Fahrer gut oder schlecht sind."
+
+                "Schritte"
+
+                "1. Zuordnung von Strafzetteln:  "
+                "Analysiere die Daten der Fahrer und die Details des Strafzettels."
+                "Bestimme, welcher Fahrer dem Strafzettel zugeordnet werden soll."
+
+                "2. Bereitstellung von Anleitungen:  "
+                "Wenn User Fragen wie Sie die FahrerApp nutzten, steht die Dokumentation zur Verfügung"
+                "Bereite präzise und verständliche Anleitungen vor. Die in 'dokumentation für KI (1).pdf'"
+
+                "3. Abfragen zu Schichtplänen:  "
+                "Greife auf Schichtplandaten zu."
+                "Liefere relevante Informationen zu den Schichten der Fahrer."
+
+                "4. Umsatzberechnungen:  "
+                "Sammle relevante Daten für die Umsatzberechnung."
+                "Berechne und präsentiere den Umsatz."
+
+                "5. Fahrerbewertung:  "
+                "Bewertungsverfahren durchführen auf Basis von Leistungsmessungen."
+                "Ergebnisse bereitstellen, die aufzeigen, welche Fahrer gut oder schlecht abschneiden."
+
+                "Ausgabeformat"
+
+                "Die Ausgabe sollte klar und präzise sein und jeweils im passenden Format und Detailgrad für jede spezifische Aufgabe dargestellt werden. Nutze Tabellen oder Listen, wenn nötig, um Informationen übersichtlich zu präsentieren."
+
+                "# Hinweise"
+
+                "Achte darauf, persönliche Daten der Fahrer zu schützen und die Datenschutzrichtlinien des Unternehmens zu befolgen."
+                "Sei flexibel und anpassungsfähig, um auf unerwartete Anfragen schnell reagieren zu können."
+
+                "Information über den aktuellen nutzer: "
+                "Information über den Nutzer: " +   data.get("user").get("name") + ", Bevorzugte Sprache " + data.get("user").get("lang") + ", bitte antworte in der selben Sprache, Unternehmen " + company.get("name") + ""
                 )
 
 
@@ -176,21 +217,63 @@ def chat():
                         arguments.get("datetime"),
                         company
                     )
+                    print("extracted_info: ",extracted_info)
                     tool_outputs.append({
                     "tool_call_id": tool.id,
-                    "output": "daten die gfeunden wurden: " + extracted_info + "\n\n"
-                    "Bitte formuliere die Antwort wie folgt:\n\n"
-                            "if(falls du einen Fahrer gefunden hast der zu einem Schicht passt)"
-                            "1. **Grund für die Zuordnung zum Fahrer:** Erkläre, warum es sich um diesen Fahrer handeln könnte, zum Beispiel, weil er oder sie das Fahrzeug genutzt hat und im Fahrzeugraum gearbeitet hat..\n\n"
-                            "2. **Fahrerinformationen:** Gib unten die Informationen über den Fahrer an. Die Relvenat sind für die Fahrer Idetifizierung. Unternehmenname (die gefunden wurde), Name, Nachname, Adresse, Geburtsdatum, Geburtsort, falls die Informationen fehlen bitte angebn.\n\n"
-                            "3. Frage dann dem Nutzer, ob du einen Mail Vorlage schreiben sollst, um der Polizei behörde zu sagen das es der Fahrer war, mit den Daten, Vorname, Nachname, Adresse, Poslteitzahl/Ort, Geburtdatum und Ort.\n\n"
-                            "else if(falls du keinen direkt pasenden Schicht gefunden hast)"
-                            "1. **Keinen passenden Fahrer gefunden**: Warum du kein passenden Fahrer gefunden hast\n\n"
-                            "2. **Schichten gefunden kurz vor oder nach dem Datum:** Bitte gebe Hier an, wer die Fahrer sind die kurz Vor oder Nach dem Datum gerarbeitet haben, mit den Persönlichen daten, details\n\n"
-                            "3. **Fahrer die zu diesem Fahrzeug zu gewiesen sind:** Gebe alle Fahrer an Die zu dem Fahrzeug gehören, mit Nummerierung\n\n"
-                            "4. Frage dann dem Nutzer, ob du einen Mail Vorlage schreiben sollst, um der Polizei behörde zu sagen das es der Fahrer war, mit den Daten, Vorname, Nachname, Adresse, Poslteitzahl/Ort, Geburtdatum und Ort. Aber Frage auch welche Fahrer der Nutzer denkt das es der Fahrer ist, weil der Nutzer entscheidet dann, über den Fahrer\n\n"
-                            "Else"
-                            " Falls keine Schichten gefunden wurden für die Zeit, dann sage bitte das du keinen passenden fahrer finden konntest, weil keine .. gefunden ist."
+                    "output": "Informationen die gefunden wurden: " + extracted_info + "\n"
+                    "Anleitung für das Modell:\n"
+
+                    "Lies die Informationen und formuliere eine Antwort basierend auf den folgenden Regeln. Wähle die entsprechende Struktur, die zur Situation passt:\n"
+
+                    "1. Wenn ein passender Fahrer für die Schicht gefunden wurde:\n"
+                    "Grund für die Zuordnung zum Fahrer:\n"
+
+                    "Erkläre kurz, warum dieser Fahrer zur Schicht passt. Zum Beispiel: Der Fahrer hat das Fahrzeug genutzt und im Arbeitszeitraum gearbeitet.\n"
+                    "Fahrerinformationen:\n"
+
+                    "Liste die relevanten Informationen über den Fahrer:\n"
+                    "arbeitszeitraum\n"
+                    "Name\n"
+                    "Nachname\n"
+                    "Unternehmen (falls vorhanden)\n"
+                    "Adresse\n"
+                    "Geburtsdatum und Geburtsort\n"
+                    "Falls Informationen fehlen, gib an, dass diese fehlen.\n"
+                    
+                    "Mail-Vorlage:\n"
+                    "Erstelle eine Mail, um der Polizeibehörde mitzuteilen, dass dies der Fahrer war. Die Mail sollte die folgenden Details enthalten: Aktenzeichen, Datum, Uhrzeit, Fahrerinformationen\n"
+
+                    "---"
+                    "Betreff: [Aktenzeichen] \n"
+                    "Beispiel: Sehr geehrte Damen und Herren, hiermit teilen wir Ihnen mit, dass der Fahrer des Fahrzeuges [Kennzeichen] am [Datum] um [Uhrzeit] wie folgt identifiziert wurde."
+                    "Vorname\n"
+                    "Nachname\n"  
+                    "Adresse\n"
+                    "Postleitzahl/Ort\n"
+                    "Geburtsdatum und Geburtsort\n"
+                    "Für weitere Informationen stehen wir Ihnen gerne zur Verfügung.\n"
+
+                    "Mit freundlichen Grüßen\n"
+
+                    "" + company.get("name") + "\n"
+
+                    "---"
+                    "2. Wenn kein passender Fahrer gefunden wurde, aber Schichten vor oder nach dem Datum existieren:\n"
+                    "Keinen passenden Fahrer gefunden:\n"
+                    "Gib an, warum kein passender Fahrer identifiziert werden konnte.\n"
+                    "Schichten gefunden (kurz vor oder nach dem Datum):\n"
+                    "Liste die Fahrer auf, die vor oder nach dem angegebenen Datum gearbeitet haben, mit:\n"
+                    "Name\n"
+                    "Nachname\n"
+                    "Adresse\n"
+                    "Geburtsdatum und Geburtsort\n"
+                    "Fahrer zugewiesen zu dem Fahrzeug:\n"
+                    "Liste alle Fahrer, die dem Fahrzeug zugewiesen sind, in einer nummerierten Liste.\n"
+                    "3. Wenn kein Fahrzeug mit dem angegebenen Kennzeichen gefunden wurde:\n"
+                    "Kein Fahrzeug gefunden:\n"
+                    "Gib an, dass kein Fahrzeug mit dem angegebenen Kennzeichen gefunden werden konnte.\n"
+                    "Beispiel: Kein Fahrzeug mit dem Kennzeichen [Kennzeichen] konnte gefunden werden.\n"
+
                 })
 
         if tool_outputs:

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -8,7 +8,7 @@ import rehypeKatex from 'rehype-katex';
 import rehypeHighlight from 'rehype-highlight';
 
 // Icons
-import { UserCircle, Bot, Code } from 'lucide-react';
+import { UserCircle, Bot, Code, Image } from 'lucide-react';
 import { Message } from '../types/chat';
 
 interface ChatMessageProps {
@@ -26,8 +26,6 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
     h1: (props: any) => <h1 className="text-2xl font-bold mt-4 mb-2" {...props} />,
     h2: (props: any) => <h2 className="text-xl font-semibold mt-3 mb-1" {...props} />,
     h3: (props: any) => <h3 className="text-lg font-semibold mt-2 mb-1" {...props} />,
-    p: (props: any) => <span className="leading-relaxed  mb-3" {...props} />,
-    
     // Code-Blöcke und Inline-Code
     code: ({ node, inline, className, children, ...rest }: any) => {
       return !inline ? (
@@ -45,10 +43,15 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
     ),
   
     // Listen
-    ul: (props: any) => <ul className="list-disc list-inside mb-2 pl-4" {...props} />,
-    ol: (props: any) => <ol className="list-decimal list-inside mb-2 pl-4" {...props} />,
-    li: (props: any) => <li className="leading-normal" {...props} />,
+    ul: (props: any) => <ul className="list-disc list-inside mb-3 pl-4" {...props} />,
+    ol: (props: any) => <ol className="list-decimal pl-4 mb-3" {...props} />,
+    li: (props: any) => <li className="leading-normal mb-2 pl-1" {...props} />,
+    p: (props: any) => <p className="leading-relaxed whitespace-pre-line mb-3" {...props} />,
   
+    // Container und Inline-Elemente
+    div: (props: any) => <div className="mb-2" {...props} />,
+    span: (props: any) => <span className="inline" {...props} />,
+    
     // Horizontale Linie
     hr: (props: any) => <hr className="border-gray-300 my-4" {...props} />,
   
@@ -68,12 +71,40 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
     tbody: (props: any) => <tbody {...props} />,
     tr: (props: any) => <tr className="border-b border-gray-300" {...props} />,
     th: (props: any) => <th className="border border-gray-300 px-2 py-1 text-left font-semibold" {...props} />,
-    td: (props: any) => <td className="border border-gray-300 px-2 py-1" {...props} />
+    td: (props: any) => <td className="border border-gray-300 px-2 py-1" {...props} />,
+    br: (props: any) => <br className="my-1" {...props} />,
+    kbd: (props: any) => (
+      <kbd className="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg" {...props} />
+    ),
+    dl: (props: any) => <dl className="mt-2 mb-4" {...props} />,
+    dt: (props: any) => <dt className="font-semibold mb-1" {...props} />,
+    dd: (props: any) => <dd className="ml-4 mb-2" {...props} />,
+    sub: (props: any) => <sub className="text-sm" {...props} />,
+    sup: (props: any) => <sup className="text-sm" {...props} />,
+    mark: (props: any) => (
+      <mark className="bg-yellow-200 px-1 rounded" {...props} />
+    ),
   };
   
+  useEffect(() => {
+    const handleCopy = (e: ClipboardEvent) => {
+      e.preventDefault();
+      const selection = window.getSelection();
+      if (selection) {
+        // Nur den reinen Text kopieren
+        const plainText = selection.toString();
+        e.clipboardData?.setData('text/plain', plainText);
+      }
+    };
+
+    document.addEventListener('copy', handleCopy);
+    return () => document.removeEventListener('copy', handleCopy);
+  }, []);
 
   return (
-    <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
+    <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}
+         onCopy={(e) => e.preventDefault()}
+    >
       <div className="flex-shrink-0">
         {isUser ? (
           <UserCircle className="w-8 h-8 text-blue-500" />
@@ -102,39 +133,15 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
             <span className="w-2 h-2 bg-gray-600 rounded-full animate-bounce animation-delay-200"></span>
             <span className="w-2 h-2 bg-gray-600 rounded-full animate-bounce animation-delay-400"></span>
           </div>
-        ) : Array.isArray(message.content) ? (
-          message.content.map((item, idx) => (
-            <ReactMarkdown
-              key={idx}
-              className="markdown-content"
-              remarkPlugins={[remarkGfm, remarkMath]}
-              rehypePlugins={[rehypeHighlight, rehypeKatex]}
-              components={components}
-            >
-              {item.text}
-            </ReactMarkdown>
-          ))
-        ) : typeof message.content === 'string' ? (
+        ) : message.content && 'text' in message.content ? (
           <ReactMarkdown
             className="markdown-content"
             remarkPlugins={[remarkGfm, remarkMath]}
             rehypePlugins={[rehypeHighlight, rehypeKatex]}
             components={components}
           >
-            {message.content}
+            {message.content.text.text}
           </ReactMarkdown>
-        ) : isToolCall && message.content ? (
-          <>
-            <p>
-              <strong>Tool:</strong> {message.function_name || (message.content as { name?: string }).name}
-            </p>
-            <p>
-              <strong>Arguments:</strong>{' '}
-              <code className="bg-gray-200 p-1 rounded">
-                {(message.content as { arguments?: string }).arguments}
-              </code>
-            </p>
-          </>
         ) : null}
 
         {isToolCall && (
@@ -149,6 +156,27 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
             <p>
               <strong>Tool Call ID:</strong> {message.tool_call_id}
             </p>
+          </div>
+        )}
+
+        {message.content.files && message.content.files.length > 0 && (
+          <div className="mt-2 flex gap-2">
+            {message.content.files.map((file, index) => (
+              <div 
+                key={index} 
+                className="relative bg-gray-100 rounded-lg p-2 flex items-center gap-2"
+              >
+                <Image className="h-5 w-5 text-gray-500" />
+                <span className="text-sm text-gray-600">
+                  Bild {index + 1}
+                </span>
+                {message.role === 'user' && (
+                  <div className="absolute -top-2 -right-2">
+                    <div className="h-4 w-4 bg-green-500 rounded-full" />
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>

@@ -12,7 +12,7 @@ interface ToolCall {
 export interface Message {
   id: string;
   role: 'user' | 'assistant' | 'tool_calls' | 'tool';
-  content?: string | { type: string; text: string }[] | { arguments?: string; name?: string };
+  content: MessageContent;
   timestamp: Date | undefined;
   function_name?: string;
   tool_call_id?: string;
@@ -29,11 +29,22 @@ export interface TicketReport {
 
 export interface ChatRequest {
   chatverlauf: {
-    role: 'user' | 'assistant' | 'tool_calls' | 'tool';
-    content?: string | { type: string; text: string }[] | { arguments?: string; name?: string };
-    function_name?: string;
-    tool_call_id?: string;
-    tool_calls?: ToolCall[]
+    content: MessageContent;
   }[];
-  threadId?: string;
+  threadId?: string | undefined;
+  isDriver: boolean;
+  companies: { name: string; id: string; }[];
+  user: { name: string; lang: string; id: string; };
 }
+
+
+export type MessageContent = {
+  text: {
+    type: 'text';
+    text: string;
+  };
+  files?: {
+    type: 'image_url' | 'image_file';
+    data: string;
+  }[];
+};

@@ -199,7 +199,7 @@ def determine_company(user_input, company_list):
 def determine_vehicle(user_input, vehicles):
     # OpenAI-Aufruf
     completion = client.chat.completions.create(
-    model="gpt-4o-mini",
+    model="gpt-4o",
     messages=[
         {
             "role": "system",
@@ -208,7 +208,7 @@ def determine_vehicle(user_input, vehicles):
                 "You are provided with a list of vehicles and their details, including license plates in various formats. "
                 "Your task is to match the user input to the most likely vehicle by identifying similarities in the license plate, "
                 "even if the format varies (e.g., 'B-E-1234' is the same as 'BE1234' or 'b-e123'). "
-                "If no match can be found with reasonable confidence, return a clear response indicating that no matching vehicle was found for the specified company."
+                "If no match can be found with reasonable confidence, return a clear response indicating that no matching vehicle was found for the specified company. Pls write the number in latine letters"
             )
         },
         {
@@ -252,7 +252,7 @@ def determine_vehicle(user_input, vehicles):
         frequency_penalty=0,
         presence_penalty=0
     )
-    #print("completion: ",completion.choices[0].message.content)
+    print("completion: ", completion.choices[0].message.content)
     return completion.choices[0].message.content  # Gibt die JSON-Antwort zurück
 
 def get_filtered_companies():
@@ -287,12 +287,13 @@ def extract_ticket_info(user_input_license_plate, user_input_datetime, user_inpu
     
     all_filtered_vehicles = get_filtered_vehicles(company['id'])
     vehicle_plate = determine_vehicle(user_input_license_plate, all_filtered_vehicles)
-    if not vehicle_plate:
-        return "Kein Fahrzeug gefunden."
+    vehicle_plate1 = json.loads(vehicle_plate)
+    if not vehicle_plate1['id']:
+        return "Kein Fahrzeug gefunden. mit der Kennzeichen: " + user_input_license_plate
     driver_shifts = get_shift(user_input_datetime, vehicle_plate, company['id'])
 
     if not driver_shifts:
-        return "Keine Schichten gefunden."
+        return "Keine Schichten gefunden für die Zeit: " + user_input_datetime + " mit dem Fahrzeug: " + vehicle_plate1['plate']
 
     exact_shifts = driver_shifts.get('exact_shifts', [])
     shifts_before = driver_shifts.get('shifts_before', [])
@@ -302,7 +303,6 @@ def extract_ticket_info(user_input_license_plate, user_input_datetime, user_inpu
         driver_info = exact_shifts[0]
         return (
             f"Die Rückgabewerte sind:\n"
-            f"Firmenname: {company['name']}\n"
             f"Fahrzeug: {vehicle_plate}\n"
             f"Fahrer: {driver_info}"
         )
