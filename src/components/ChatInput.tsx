@@ -6,9 +6,17 @@ interface ChatInputProps {
   onSendMessage: (message?: string, files?: File[]) => void;
   disabled?: boolean;
   InputMessage: string;
+  allowFileUpload?: boolean;
+  allowCamera?: boolean;
 }
 
-export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled, InputMessage }) => {
+export const ChatInput: React.FC<ChatInputProps> = ({ 
+  onSendMessage, 
+  disabled, 
+  InputMessage,
+  allowFileUpload = true,
+  allowCamera = true
+}) => {
   const [input, setInput] = useState('');
   const [selectedFile, setSelectedFile] = useState<File[] | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -153,29 +161,33 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled, I
 
         <div className="flex justify-between items-center px-4 pb-1">
           <div className="flex gap-1">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="p-1 text-gray-500 hover:text-gray-700 disabled:opacity-50 flex items-center gap-2"
-              disabled={disabled || isUploading}
-              title="Datei auswählen"
-            >
-              {isUploading ? (
-                <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
-              ) : (
-                <Paperclip className="h-5 w-5" />
-              )}
-            </button>
+            {allowFileUpload && (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="p-1 text-gray-500 hover:text-gray-700 disabled:opacity-50 flex items-center gap-2"
+                disabled={disabled || isUploading}
+                title="Datei auswählen"
+              >
+                {isUploading ? (
+                  <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
+                ) : (
+                  <Paperclip className="h-5 w-5" />
+                )}
+              </button>
+            )}
 
-            <button
-              type="button"
-              onClick={handleCameraCapture}
-              className="p-1 text-gray-500 hover:text-gray-700 disabled:opacity-50"
-              disabled={disabled || isUploading}
-              title="Foto aufnehmen"
-            >
-              <Camera className="h-5 w-5" />
-            </button>
+            {allowCamera && (
+              <button
+                type="button"
+                onClick={handleCameraCapture}
+                className="p-1 text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                disabled={disabled || isUploading}
+                title="Foto aufnehmen"
+              >
+                <Camera className="h-5 w-5" />
+              </button>
+            )}
           </div>
 
           <button
@@ -187,13 +199,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled, I
           </button>
         </div>
 
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          accept="image/*"
-          className="hidden"
-        />
+        {allowFileUpload && (
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept="image/*"
+            className="hidden"
+          />
+        )}
       </form>
     </div>
   );

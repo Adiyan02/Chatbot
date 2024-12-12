@@ -10,6 +10,8 @@ interface ChatbotProps {
   user: { name: string; lang: SupportedLanguages; id: string; };
   position?: 'bottom-right' | 'bottom-left';
   isDriver: boolean;
+  allowFileUpload?: boolean;
+  allowCamera?: boolean;
 }
 
 type SupportedLanguages = 'de' | 'en' | 'ar' | 'tr';
@@ -18,7 +20,9 @@ export const Chatbot: React.FC<ChatbotProps> = ({
   companys, 
   user,
   position = 'bottom-right',
-  isDriver
+  isDriver,
+  allowFileUpload = true,
+  allowCamera = true
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -290,6 +294,8 @@ export const Chatbot: React.FC<ChatbotProps> = ({
                   onSendMessage={handleSendMessage}
                   disabled={isProcessing}
                   InputMessage={greetingsInputMessage[user.lang]}
+                  allowFileUpload={allowFileUpload}
+                  allowCamera={allowCamera}
                 />
               </div>
             </div>
