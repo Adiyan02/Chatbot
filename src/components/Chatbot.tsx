@@ -187,110 +187,115 @@ export const Chatbot: React.FC<ChatbotProps> = ({
   return (
     <>
       {/* Chatbot Toggle Button */}
-      {!isOpen && (
-        <button
-          onClick={() => setIsOpen(true)}
-          className={`fixed ${positionClasses[position]} z-50 bg-blue-500 text-white rounded-full p-4 shadow-lg hover:bg-blue-600 transition-all`}
-        >
-          <MessageCircle className="h-6 w-6" />
-        </button>
-      )}
+      <button
+        onClick={() => setIsOpen(true)}
+        className={`fixed ${positionClasses[position]} z-50 bg-blue-500 text-white 
+          rounded-full p-4 shadow-lg hover:bg-blue-600 transition-all duration-300
+          ${isOpen ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`}
+      >
+        <MessageCircle className="h-6 w-6" />
+      </button>
 
       {/* Chatbot Window */}
-      {isOpen && (
-        <div className={`fixed z-50 
-          w-full h-[100dvh] sm:w-[500px] sm:h-auto
-          ${position === 'bottom-right' ? 'right-0 sm:right-4' : 'left-0 sm:left-4'}
-          bottom-0 sm:bottom-4
-          m-0 sm:m-4`}
+      <div className={`fixed z-50 
+        w-full h-[100dvh] sm:w-[500px] sm:h-auto
+        ${position === 'bottom-right' ? 'right-0 sm:right-4' : 'left-0 sm:left-4'}
+        bottom-0 sm:bottom-4
+        m-0 sm:m-4
+        transition-all duration-300 ease-in-out
+        ${isOpen 
+          ? 'translate-y-0 opacity-100' 
+          : 'translate-y-[100vh] sm:translate-y-[50vh] opacity-0 pointer-events-none'}`}
+      >
+        <div className={`bg-white rounded-none sm:rounded-lg shadow-xl w-full h-full 
+          flex flex-col transition-all duration-300
+          ${isMinimized ? 'sm:h-[60px]' : ''}`}
         >
-          <div className="bg-white rounded-none sm:rounded-lg shadow-xl w-full h-full flex flex-col">
-            {/* Header */}
-            <div className="flex items-center justify-between bg-blue-500 text-white p-4 rounded-none sm:rounded-t-lg">
-              <div className="flex items-center gap-4">
-                <h2 className="font-semibold">{greetingsTitle[user.lang]}</h2>
-                {!isDriver && (
-                  <div className="relative group">
-                    <select
-                      value={selectedCompany.id}
-                      onChange={(e) => {
-                        const company = companys.find(c => c.id === e.target.value);
-                        if (company) {
-                          setSelectedCompany(company);
-                          setMessages([{
-                            id: '1',
-                            role: 'assistant',
-                            content: {
-                              text: {
-                                type: 'text',
-                                text: greetings[user.lang] || greetings['de'],
-                              },
+          {/* Header */}
+          <div className="flex items-center justify-between bg-blue-500 text-white p-4 rounded-none sm:rounded-t-lg">
+            <div className="flex items-center gap-4">
+              <h2 className="font-semibold">{greetingsTitle[user.lang]}</h2>
+              {!isDriver && (
+                <div className="relative group">
+                  <select
+                    value={selectedCompany.id}
+                    onChange={(e) => {
+                      const company = companys.find(c => c.id === e.target.value);
+                      if (company) {
+                        setSelectedCompany(company);
+                        setMessages([{
+                          id: '1',
+                          role: 'assistant',
+                          content: {
+                            text: {
+                              type: 'text',
+                              text: greetings[user.lang] || greetings['de'],
                             },
-                            timestamp: new Date(),
-                          }]);
-                          setThreadId(null);
-                        }
-                      }}
-                      className="appearance-none bg-transparent text-white/90 text-sm 
-                        pl-2 pr-7 py-1 rounded border border-white/20 
-                        cursor-pointer hover:bg-white/10 focus:outline-none 
-                        focus:border-white/30 transition-all"
-                    >
-                      {companys.map(company => (
-                        <option 
-                          key={company.id} 
-                          value={company.id}
-                          className="bg-blue-600 text-white"
-                        >
-                          {company.name}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 
-                      text-white/70 group-hover:text-white/90 pointer-events-none transition-colors" />
-                  </div>
-                )}
+                          },
+                          timestamp: new Date(),
+                        }]);
+                        setThreadId(null);
+                      }
+                    }}
+                    className="appearance-none bg-transparent text-white/90 text-sm 
+                      pl-2 pr-7 py-1 rounded border border-white/20 
+                      cursor-pointer hover:bg-white/10 focus:outline-none 
+                      focus:border-white/30 transition-all"
+                  >
+                    {companys.map(company => (
+                      <option 
+                        key={company.id} 
+                        value={company.id}
+                        className="bg-blue-600 text-white"
+                      >
+                        {company.name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 
+                    text-white/70 group-hover:text-white/90 pointer-events-none transition-colors" />
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setIsMinimized(!isMinimized)}
+                className="hover:bg-blue-600 p-1 rounded sm:block hidden"
+              >
+                <Minimize2 className="h-5 w-5" />
+              </button>
+              <button 
+                onClick={() => setIsOpen(false)}
+                className="hover:bg-blue-600 p-1 rounded"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Chat Container */}
+          {!isMinimized && (
+            <div className="flex-1 flex flex-col h-full min-h-[50vh] sm:min-h-[30vh] max-h-[100vh] sm:max-h-[70vh]">
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                {messages.map((message) => (
+                  <ChatMessage key={message.id} message={message} />
+                ))}
+                <div ref={messagesEndRef} />
               </div>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => setIsMinimized(!isMinimized)}
-                  className="hover:bg-blue-600 p-1 rounded sm:block hidden"
-                >
-                  <Minimize2 className="h-5 w-5" />
-                </button>
-                <button 
-                  onClick={() => setIsOpen(false)}
-                  className="hover:bg-blue-600 p-1 rounded"
-                >
-                  <X className="h-5 w-5" />
-                </button>
+
+              {/* Input */}
+              <div className="p-4 border-t mt-auto bg-white">
+                <ChatInput
+                  onSendMessage={handleSendMessage}
+                  disabled={isProcessing}
+                  InputMessage={greetingsInputMessage[user.lang]}
+                />
               </div>
             </div>
-
-            {/* Chat Container */}
-            {!isMinimized && (
-              <div className="flex-1 flex flex-col h-full min-h-[50vh] sm:min-h-[30vh] max-h-[100vh] sm:max-h-[70vh]">
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                  {messages.map((message) => (
-                    <ChatMessage key={message.id} message={message} />
-                  ))}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                {/* Input */}
-                <div className="p-4 border-t mt-auto bg-white">
-                  <ChatInput
-                    onSendMessage={handleSendMessage}
-                    disabled={isProcessing}
-                    InputMessage={greetingsInputMessage[user.lang]}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </div>
-      )}
+      </div>
     </>
   );
 }; 

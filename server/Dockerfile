@@ -1,25 +1,25 @@
 FROM python:3.11-slim
 
-# Arbeitsverzeichnis im Container
+# Setze Arbeitsverzeichnis
 WORKDIR /app
 
-# Kopiere requirements.txt zuerst (für besseres Caching)
+# Kopiere Abhängigkeiten
 COPY requirements.txt .
 
 # Installiere Abhängigkeiten
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Kopiere den restlichen Projektcode
+# Kopiere Projektdateien
 COPY . .
 
-# Erstelle uploads Ordner
+# Erstelle Uploads-Ordner
 RUN mkdir -p uploads
 
 # Setze Umgebungsvariablen
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
 
-# Port freigeben
+# Freigabe des Ports
 EXPOSE 5000
 
 # Starte die Anwendung
