@@ -12,7 +12,7 @@ AUTHORIZATION_HEADER = {
 }
 
 def get_filtered_vehicles(company_id):
-    url = "https://test-api.meinfahrer.app/api/v1/admin/vehicle/getAll"
+    url = "https://dev-api.meinfahrer.app/api/v1/admin/vehicle/getAll"
     payload = {
         "companies": [company_id],
         "page_size": 200,
@@ -40,7 +40,7 @@ def get_filtered_vehicles(company_id):
         return None
 
 def get_driver_by_company_vehicle(vehicle_id, company_id):
-    url = "https://test-api.meinfahrer.app/api/v1/admin/user/getAll"
+    url = "https://dev-api.meinfahrer.app/api/v1/admin/user/getAll"
     payload = {
         "page_size": 200,
         "vehicle":  vehicle_id,
@@ -76,7 +76,7 @@ def get_shift(date, vehicle, companyID):
     end_window = date_obj + timedelta(days=2)
     driver_info_list = []
 
-    url = "https://test-api.meinfahrer.app/api/v1/admin/shift/getAll"
+    url = "https://dev-api.meinfahrer.app/api/v1/admin/shift/getAll"
     payload = {
         "company": companyID,
         "vehicle": vehicle['id'],
@@ -256,7 +256,7 @@ def determine_vehicle(user_input, vehicles):
     return completion.choices[0].message.content  # Gibt die JSON-Antwort zurück
 
 def get_filtered_companies():
-    url = "https://test-api.meinfahrer.app/api/v1/admin/company/getAll"
+    url = "https://dev-api.meinfahrer.app/api/v1/admin/company/getAll"
     payload = {
         "sorting": {"fullName": 1}
     }

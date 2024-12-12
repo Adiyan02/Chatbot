@@ -8,7 +8,7 @@ import rehypeKatex from 'rehype-katex';
 import rehypeHighlight from 'rehype-highlight';
 
 // Icons
-import { UserCircle, Bot, Code, Image } from 'lucide-react';
+import { UserCircle, Bot, Code, Image, FileText } from 'lucide-react';
 import { Message } from '../types/chat';
 
 interface ChatMessageProps {
@@ -166,9 +166,13 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
                 key={index} 
                 className="relative bg-gray-100 rounded-lg p-2 flex items-center gap-2"
               >
-                <Image className="h-5 w-5 text-gray-500" />
+                {file.type === 'pdf_file' ? (
+                  <FileText className="h-5 w-5 text-gray-500" />
+                ) : (
+                  <Image className="h-5 w-5 text-gray-500" />
+                )}
                 <span className="text-sm text-gray-600">
-                  Bild {index + 1}
+                  {file.type === 'pdf_file' ? `PDF ${index + 1}` : `Bild ${index + 1}`}
                 </span>
                 {message.role === 'user' && (
                   <div className="absolute -top-2 -right-2">

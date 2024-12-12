@@ -35,8 +35,8 @@ export interface ChatRequest {
   isDriver: boolean;
   companies: { name: string; id: string; }[];
   user: { name: string; lang: string; id: string; };
+  attachments?: string[];
 }
-
 
 export type MessageContent = {
   text: {
@@ -48,3 +48,5 @@ export type MessageContent = {
     data: string;
   }[];
 };
+
+export type FileType = 'image_file' | 'pdf_file';

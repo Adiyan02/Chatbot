@@ -13,8 +13,8 @@ createRoot(document.getElementById('root')!).render(
       user={{ name: 'Alaaddin Sagun', lang: 'de', id: '1'}}
       position="bottom-right"
       isDriver={false}
-      allowFileUpload={false}
-      allowCamera={false}
+      allowFileUpload={true}
+      allowCamera={true}
     />
   </StrictMode>
 );

@@ -80,10 +80,16 @@ export const Chatbot: React.FC<ChatbotProps> = ({
     
     setIsProcessing(true);
     try {
-      let fileIds: string[] = [];
+      let fileIds: { type: string; data: string }[] = [];
       
       if (files && files.length > 0) {
-        fileIds = await Promise.all(files.map(file => uploadFile(file)));
+        fileIds = await Promise.all(files.map(async file => {
+          const response = await uploadFile(file);
+          return {
+            type: response.file_type,
+            data: response.file_id
+          };
+        }));
       }
 
       const userMessage: Message = {
@@ -92,12 +98,9 @@ export const Chatbot: React.FC<ChatbotProps> = ({
         content: {
           text: {
             type: 'text',
-            text: textMessage || (files && files.length > 0 && !textMessage ? 'Bitte analysieren Sie das Bild.' : ''),
+            text: textMessage || (files && files.length > 0 && !textMessage ? 'Bitte analysieren Sie das Dokument.' : ''),
           },
-          files: fileIds.map(id => ({
-            type: 'image_file',
-            data: id
-          }))
+          files: fileIds
         },
         timestamp: new Date(),
       };

@@ -108,6 +108,14 @@ def chat():
         data = request.get_json()
         print("Received data:", data)
         
+        # Attachments korrekt formatieren
+        attachments = []
+        if data.get("attachments"):
+            attachments = [{
+                "file_id": file_id,
+                "tools": [{"type": "file_search"}],
+            } for file_id in data.get("attachments")]
+
         # Erstelle die Nachricht mit Text
         user_message = [{
             "type": "text", 
@@ -137,6 +145,7 @@ def chat():
             thread_id=thread_id or thread.id,
             role="user",
             content=user_message,
+            attachments = attachments
            )
         run = client.beta.threads.runs.create_and_poll(
                 thread_id = thread_id or thread.id,
@@ -231,7 +240,7 @@ def chat():
                     "Erkläre kurz, warum dieser Fahrer zur Schicht passt. Zum Beispiel: Der Fahrer hat das Fahrzeug genutzt und im Arbeitszeitraum gearbeitet.\n"
                     "Fahrerinformationen:\n"
 
-                    "Liste die relevanten Informationen über den Fahrer:\n"
+                    "Liste die relevanten Informationen ��ber den Fahrer:\n"
                     "arbeitszeitraum\n"
                     "Name\n"
                     "Nachname\n"
@@ -322,9 +331,9 @@ def serve_file(filename):
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
     try:
+        file_type = None
         if 'file' not in request.files:
             return jsonify({'error': 'Keine Datei gefunden'}), 400
-            
         file = request.files['file']
         if file.filename == '':
             return jsonify({'error': 'Keine Datei ausgewählt'}), 400
@@ -334,22 +343,37 @@ def upload_file():
             temp_path = os.path.join(UPLOAD_FOLDER, secure_filename(file.filename))
             file.save(temp_path)
             
+            # Dateityp bestimmen
+            mime_type = file.content_type
+            print("Detected MIME type:", mime_type)
+            
+            # Purpose basierend auf MIME-Typ setzen
+            if mime_type == 'application/pdf':
+                purpose = "assistants"
+                file_type = "pdf_file"
+            else:
+                file_type = "image_file"
+                purpose = "vision"
+                
             # OpenAI File erstellen
             with open(temp_path, 'rb') as file_data:
                 openai_file = client.files.create(
                     file=file_data,
-                    purpose="vision"
+                    purpose=purpose
                 )
+            
             
             # Temporäre Datei löschen
             os.remove(temp_path)
             
             return jsonify({
                 'success': True,
-                'file_id': openai_file.id
+                'file_id': openai_file.id,
+                'file_type': file_type
             })
             
     except Exception as e:
+        print("Upload error:", str(e))
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':

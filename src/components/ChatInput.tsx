@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Send, Paperclip, Camera, Image, X } from 'lucide-react';
+import { Send, Paperclip, Camera, Image, X, FileText } from 'lucide-react';
 import { uploadFile } from '../utils/api';
 
 interface ChatInputProps {
@@ -21,6 +21,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [selectedFile, setSelectedFile] = useState<File[] | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFileId, setUploadedFileId] = useState<string | null>(null);
+  const [selectedFileType, setSelectedFileType] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -33,6 +34,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         setSelectedFile([file]);
         const fileId = await uploadFile(file);
         setUploadedFileId(fileId);
+        setSelectedFileType(file.type.startsWith('application/pdf') ? 'pdf_file' : 'image_file');
       } catch (error) {
         console.error('Fehler beim Upload:', error);
       } finally {
@@ -107,7 +109,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               key={index}
               className="relative bg-gray-100 rounded-lg p-2 flex items-center gap-2 group"
             >
-              <Image className="h-5 w-5 text-gray-500" />
+              {file.type.startsWith('application/pdf') ? (
+                <FileText className="h-5 w-5 text-gray-500" />
+              ) : (
+                <Image className="h-5 w-5 text-gray-500" />
+              )}
               <span className="text-sm text-gray-600">
                 {file.name}
               </span>
@@ -204,7 +210,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             type="file"
             ref={fileInputRef}
             onChange={handleFileChange}
-            accept="image/*"
+            accept="image/*,application/pdf"
             className="hidden"
           />
         )}
