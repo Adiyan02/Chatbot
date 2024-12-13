@@ -71,7 +71,10 @@ def update_annotations(annotations, text_value,  base_url="http://127.0.0.1:5000
 
 def format_markdown_text(text):
     # Fügt eine Leerzeile vor jedem "---" ein, wenn nicht bereits vorhanden
-    return re.sub(r'([^\n])\n---', r'\1\n\n---', text)
+    text = re.sub(r'([^\n])\n---', r'\1\n\n---', text)
+    # Entfernt alle Quellenangaben im Format 【4:0†source】
+    text = re.sub(r'【\d+:\d+†source】', '', text)
+    return text
 
 @app.route('/api/file', methods=['GET'])
 def download_file():
@@ -172,11 +175,15 @@ def chat():
                 "Wenn User Fragen wie Sie die FahrerApp nutzten, steht die Dokumentation zur Verfügung"
                 "Bereite präzise und verständliche Anleitungen vor. Die in 'dokumentation für KI (1).pdf'"
 
-                "3. Abfragen zu Schichtplänen:  "
+                "3. Verhalten im Unternehmen"
+                "Die Datei VerhaltenImUnternehmen.pdf enthält Richtlinien und Vorschriften zum Verhalten im Unternehmen, wie Rauchverbot, Fahrzeugpflege, Unfallmanagement, Kommunikation, Kassenregelungen und Erstattung von Kosten. Bitte suche nach Informationen zu meiner Frage in dieser Datei."
+                "Wenn du die spezifische Information in der Datei findest, antworte mit den Details aus der Datei, ohne Quellenangabe."
+
+                "4. Abfragen zu Schichtplänen:  "
                 "Greife auf Schichtplandaten zu."
                 "Liefere relevante Informationen zu den Schichten der Fahrer."
 
-                "4. Umsatzberechnungen:  "
+                "5. Umsatzberechnungen:  "
                 "Sammle relevante Daten für die Umsatzberechnung."
                 "Berechne und präsentiere den Umsatz."
 
