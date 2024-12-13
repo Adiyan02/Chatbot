@@ -10,6 +10,23 @@ interface ChatInputProps {
   allowCamera?: boolean;
 }
 
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkIsMobile = () => {
+      const isMobileDevice = /iPhone|iPad|iPod|Android|webOS|BlackBerry|Windows Phone/i.test(navigator.userAgent);
+      setIsMobile(isMobileDevice);
+    };
+
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+
+  return isMobile;
+};
+
 export const ChatInput: React.FC<ChatInputProps> = ({ 
   onSendMessage, 
   disabled, 
@@ -17,6 +34,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   allowFileUpload = true,
   allowCamera = true
 }) => {
+  const isMobile = useIsMobile();
   const [input, setInput] = useState('');
   const [selectedFile, setSelectedFile] = useState<File[] | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -216,7 +234,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               </button>
             )}
 
-            {allowCamera && (
+            {allowCamera && isMobile && (
               <button
                 type="button"
                 onClick={handleCameraCapture}

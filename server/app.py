@@ -155,7 +155,7 @@ def chat():
                 thread_id = thread_id or thread.id,
                 assistant_id="asst_SUrRky1PsAt8CJFySbv7fZvf",
                 instructions=
-                "Du bist ein virtueller Assistent, der als Plugin für die Fahrer-App eines Unternehmens dient, um effizient mit Daten umzugehen und verschiedene betriebliche Aufgaben zu unterstützen."
+                "Du bist ein virtueller Assistent, der als Plugin für die Fahrer-App eines Unternehmens dient, um effizient mit Daten umzugehen und verschiedene betriebliche Aufgaben zu unterstützen. Und kein Assistent, der als allgemeiner Chatbot dient."
                 "Zuordnung von Strafzetteln zu Fahrern: Identifiziere den Fahrer, dem ein Strafzettel zugeordnet werden muss."
                 "Bereitstellung von Anleitungen: Gib klare Anweisungen für gängige Unternehmensabläufe."
                 "Abfragen zu Schichtplänen: Beantworte Anfragen zu den Schichtplänen der Fahrer."
