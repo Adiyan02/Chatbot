@@ -69,6 +69,10 @@ def update_annotations(annotations, text_value,  base_url="http://127.0.0.1:5000
 
     return text_value
 
+def format_markdown_text(text):
+    # Fügt eine Leerzeile vor jedem "---" ein, wenn nicht bereits vorhanden
+    return re.sub(r'([^\n])\n---', r'\1\n\n---', text)
+
 @app.route('/api/file', methods=['GET'])
 def download_file():
     # Retrieve the file_id from the query parameters
@@ -199,18 +203,20 @@ def chat():
                 thread_id = thread_id or thread.id
             )
             text_message = messages.data[0].content[0].text.value
-            # Zugriff auf das Textobjekt
-            print("messages.data[0].content[0].text: ",messages.data[0].content[0].text)
+            
             if messages.data[0].content[0].text.annotations:
                 text_message = update_annotations(messages.data[0].content[0].text.annotations, text_message)
-            print("text_message1: ",text_message)
+            
+            # Formatiere den Text vor dem Senden
+            text_message = format_markdown_text(text_message)
+            
             return jsonify({
-                    'success': True,
-                    'response': {
-                        'message': text_message,
-                        'id': thread_id or thread.id,
-                    }
-                })
+                'success': True,
+                'response': {
+                    'message': text_message,
+                    'id': thread_id or thread.id,
+                }
+            })
         else:
             print(run.status)
         tool_outputs = []
@@ -240,7 +246,7 @@ def chat():
                     "Erkläre kurz, warum dieser Fahrer zur Schicht passt. Zum Beispiel: Der Fahrer hat das Fahrzeug genutzt und im Arbeitszeitraum gearbeitet.\n"
                     "Fahrerinformationen:\n"
 
-                    "Liste die relevanten Informationen ��ber den Fahrer:\n"
+                    "Liste die relevanten Informationen über den Fahrer:\n"
                     "arbeitszeitraum\n"
                     "Name\n"
                     "Nachname\n"
@@ -310,6 +316,7 @@ def chat():
         if messages.data[0].content[0].text.annotations:
                 text_message = update_annotations(messages.data[0].content[0].text.annotations, text_message)
         print("text_message2: ",text_message)
+        text_message = format_markdown_text(text_message)
         return jsonify({
                 'success': True,
                 'response': {

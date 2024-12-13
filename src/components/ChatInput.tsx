@@ -50,53 +50,86 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setInput('');
-    setSelectedFile(null);
-    setUploadedFileId(null);
-    resetTextareaHeight();
-    if (uploadedFileId) {
+    try {
+      e.preventDefault();
+
+      if (uploadedFileId) {
+        setInput('');
+        setSelectedFile(null);
+        setUploadedFileId(null);
+        resetTextareaHeight();
       await onSendMessage(input || undefined, selectedFile || undefined);
     } else if (input.trim()) {
+      setInput('');
+      setSelectedFile(null);
+      setUploadedFileId(null);
+      resetTextareaHeight();
       await onSendMessage(input);
     }
-  };
+  }
+  catch (error) {
+    console.error('Fehler beim Senden der Nachricht:', error);
+  }
+};
 
   const handleCameraCapture = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      const videoElement = document.createElement('video');
-      const canvas = document.createElement('canvas');
-      
-      videoElement.srcObject = stream;
-      await videoElement.play();
+      // Prüfen ob es ein mobiles Gerät ist
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-      // Bild aufnehmen
-      canvas.width = videoElement.videoWidth;
-      canvas.height = videoElement.videoHeight;
-      canvas.getContext('2d')?.drawImage(videoElement, 0, 0);
-
-      // Stream beenden
-      stream.getTracks().forEach(track => track.stop());
-
-      // Canvas zu Blob konvertieren
-      canvas.toBlob(async (blob) => {
-        if (blob) {
-          const file = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' });
-          setIsUploading(true);
-          try {
-            setSelectedFile([file]);
-            const fileId = await uploadFile(file);
-            setUploadedFileId(fileId);
-          } catch (error) {
-            console.error('Fehler beim Upload:', error);
-          } finally {
-            setIsUploading(false);
+      if (isMobile) {
+        // Mobile Version mit file input
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.capture = 'environment';
+        
+        input.onchange = async (e) => {
+          const target = e.target as HTMLInputElement;
+          if (target.files && target.files[0]) {
+            await handleCapturedFile(target.files[0]);
           }
-        }
-      }, 'image/jpeg');
+        };
+        input.click();
+      } else {
+        // Desktop Version mit getUserMedia
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const videoElement = document.createElement('video');
+        const canvas = document.createElement('canvas');
+        
+        videoElement.srcObject = stream;
+        await videoElement.play();
+
+        canvas.width = videoElement.videoWidth;
+        canvas.height = videoElement.videoHeight;
+        canvas.getContext('2d')?.drawImage(videoElement, 0, 0);
+
+        stream.getTracks().forEach(track => track.stop());
+
+        canvas.toBlob(async (blob) => {
+          if (blob) {
+            const file = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' });
+            await handleCapturedFile(file);
+          }
+        }, 'image/jpeg');
+      }
     } catch (error) {
       console.error('Fehler beim Zugriff auf die Kamera:', error);
+    }
+  };
+
+  // Hilfsfunktion für die Dateiverarbeitung
+  const handleCapturedFile = async (file: File) => {
+    setIsUploading(true);
+    try {
+      setSelectedFile([file]);
+      const fileId = await uploadFile(file);
+      setUploadedFileId(fileId);
+      setSelectedFileType(file.type.startsWith('application/pdf') ? 'pdf_file' : 'image_file');
+    } catch (error) {
+      console.error('Fehler beim Upload:', error);
+    } finally {
+      setIsUploading(false);
     }
   };
 

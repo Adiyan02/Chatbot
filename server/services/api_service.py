@@ -54,12 +54,13 @@ def get_driver_by_company_vehicle(vehicle_id, company_id):
             data = response.json()
             print("userData: ", data)
             users = data.get("data", {}).get("users", [])
-            print("users: ", users)
+            #print("users: ", users)
             users = [
                 {
-                    "fullName": c.get("fullName"),
+                    "fullName": c.get("firstName") + " " + c.get("lastName"),
                 } for c in users
             ]
+            print("users: ", users)
             return users
         else:
             logger.error(f"Error fetching vehicles: {response.status_code}, {response.text}")
@@ -126,11 +127,12 @@ def get_shift(date, vehicle, companyID):
             # Sortieren der Schichten nach Nähe zum Datum
             shifts_before.sort(key=lambda x: date_obj - x[0])
             shifts_after.sort(key=lambda x: x[0] - date_obj)
-
+            print("shifts_before: ", shifts_before)
+            print("shifts_after: ", shifts_after)
             result = {
                 'exact_shifts': exact_shifts,
-                'shifts_before': [info for _, info in shifts_before],
-                'shifts_after': [info for _, info in shifts_after]
+                'shifts_before': [shifts_before[0]],
+                'shifts_after': [shifts_after[0]]
             }
 
             return result

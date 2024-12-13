@@ -82,6 +82,25 @@ export const Chatbot: React.FC<ChatbotProps> = ({
     try {
       let fileIds: { type: string; data: string }[] = [];
       
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        role: 'user',
+        content: {
+          text: {
+            type: 'text',
+            text: textMessage || (files && files.length > 0 && !textMessage ? 'Bitte analysieren Sie das Dokument.' : ''),
+          },
+          files: files?.map(file => ({
+            type: file.type.startsWith('application/pdf') ? 'pdf_file' : 'image_file',
+            data: 'uploading'
+          }))
+        },
+        timestamp: new Date(),
+      };
+
+      setMessages(prev => [...prev, userMessage]);
+      setMessages(prev => [...prev, typingMessage]);
+
       if (files && files.length > 0) {
         fileIds = await Promise.all(files.map(async file => {
           const response = await uploadFile(file);
@@ -92,57 +111,26 @@ export const Chatbot: React.FC<ChatbotProps> = ({
         }));
       }
 
-      const userMessage: Message = {
-        id: Date.now().toString(),
-        role: 'user',
-        content: {
-          text: {
-            type: 'text',
-            text: textMessage || (files && files.length > 0 && !textMessage ? 'Bitte analysieren Sie das Dokument.' : ''),
-          },
-          files: fileIds
-        },
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, userMessage]);
-
       const chatRequest: ChatRequest = {
-        chatverlauf: [userMessage],
+        chatverlauf: [{
+          ...userMessage,
+          content: {
+            ...userMessage.content,
+            files: fileIds
+          }
+        }],
         threadId: threadId || undefined,
         isDriver,
         companies: [selectedCompany],
         user
       };
 
-      setMessages((prev) => [...prev, typingMessage]);
-
       const response = await sendMessage(chatRequest);
 
-      setMessages((prev) => prev.filter((msg) => msg.id !== 'typing'));
-
-      if (response.success) {
-        if (!threadId && response.response.id) {
-          setThreadId(response.response.id);
-        }
-
-        const assistantMessage: Message = {
-          id: Date.now().toString(),
-          role: 'assistant',
-          content: {
-            text: {
-              type: 'text',
-              text: response.response.message,
-            },
-          },
-          timestamp: new Date(),
-        };
-
-        setMessages((prev) => [...prev, assistantMessage]);
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          {
+      setMessages(prev => {
+        const withoutTyping = prev.filter(msg => msg.id !== 'typing');
+        if (!response.success) {
+          return [...withoutTyping, {
             id: Date.now().toString(),
             role: 'assistant',
             content: {
@@ -152,14 +140,30 @@ export const Chatbot: React.FC<ChatbotProps> = ({
               },
             },
             timestamp: new Date(),
+          }];
+        }
+
+        if (!threadId && response.response.id) {
+          setThreadId(response.response.id);
+        }
+
+        return [...withoutTyping, {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: {
+            text: {
+              type: 'text',
+              text: response.response.message,
+            },
           },
-        ]);
-      }
+          timestamp: new Date(),
+        }];
+      });
+
     } catch (error) {
-      setMessages((prev) => prev.filter((msg) => msg.id !== 'typing'));
-      setMessages((prev) => [
-        ...prev,
-        {
+      setMessages(prev => {
+        const withoutTyping = prev.filter(msg => msg.id !== 'typing');
+        return [...withoutTyping, {
           id: Date.now().toString(),
           role: 'assistant',
           content: {
@@ -169,8 +173,8 @@ export const Chatbot: React.FC<ChatbotProps> = ({
             },
           },
           timestamp: new Date(),
-        },
-      ]);
+        }];
+      });
     } finally {
       setIsProcessing(false);
     }
