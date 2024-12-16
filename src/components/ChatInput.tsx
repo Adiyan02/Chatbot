@@ -51,7 +51,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         const file = e.target.files[0];
         setSelectedFile([file]);
         const fileId = await uploadFile(file);
-        setUploadedFileId(fileId);
+        setUploadedFileId(fileId.file_id);
         setSelectedFileType(file.type.startsWith('application/pdf') ? 'pdf_file' : 'image_file');
       } catch (error) {
         console.error('Fehler beim Upload:', error);
@@ -142,7 +142,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     try {
       setSelectedFile([file]);
       const fileId = await uploadFile(file);
-      setUploadedFileId(fileId);
+      setUploadedFileId(fileId.file_id);
       setSelectedFileType(file.type.startsWith('application/pdf') ? 'pdf_file' : 'image_file');
     } catch (error) {
       console.error('Fehler beim Upload:', error);

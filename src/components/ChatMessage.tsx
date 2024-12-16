@@ -166,13 +166,13 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
                 key={index} 
                 className="relative bg-gray-100 rounded-lg p-2 flex items-center gap-2"
               >
-                {file.type === 'pdf_file' ? (
-                  <FileText className="h-5 w-5 text-gray-500" />
-                ) : (
+                {file.type === 'image_file' ? (
                   <Image className="h-5 w-5 text-gray-500" />
+                ) : (
+                  <FileText className="h-5 w-5 text-gray-500" />
                 )}
                 <span className="text-sm text-gray-600">
-                  {file.type === 'pdf_file' ? `PDF ${index + 1}` : `Bild ${index + 1}`}
+                  {file.type === 'image_file' ? `Bild ${index + 1}` : `Datei ${index + 1}`}
                 </span>
                 {message.role === 'user' && (
                   <div className="absolute -top-2 -right-2">

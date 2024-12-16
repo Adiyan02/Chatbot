@@ -1,5 +1,5 @@
 import { ChatRequest } from '../types/chat';
-const API_URL = 'http://49.13.25.32:5000/';
+const API_URL = 'http://127.0.0.1:5000/';
 
 export const sendMessage = async (chatRequest: ChatRequest) => {
   const pdfFiles = chatRequest.chatverlauf[0].content.files?.filter(f => f.type === 'pdf_file') || [];
@@ -31,7 +31,11 @@ export const sendMessage = async (chatRequest: ChatRequest) => {
 
   return response.json();
 };
-export const uploadFile = async (file: File): Promise<{file_id: string, file_type: string}> => {
+export const uploadFile = async (file: File): Promise<{
+  file_id: string;
+  file_type: string;
+  extracted_text: string;
+}> => {
   const formData = new FormData();
   formData.append('file', file);
 
@@ -46,7 +50,7 @@ export const uploadFile = async (file: File): Promise<{file_id: string, file_typ
     }
 
     const data = await response.json();
-    return {file_id: data.file_id, file_type: data.file_type};
+    return {file_id: data.file_id, file_type: data.file_type, extracted_text: data.extracted_text};
   } catch (error) {
     console.error('Fehler beim Hochladen der Datei:', error);
     throw error;

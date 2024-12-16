@@ -80,7 +80,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({
     
     setIsProcessing(true);
     try {
-      let fileIds: { type: string; data: string }[] = [];
+      let fileIds: { type: "image_file" | "image_url"; data: string }[] = [];
       
       const userMessage: Message = {
         id: Date.now().toString(),
@@ -91,7 +91,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({
             text: textMessage || (files && files.length > 0 && !textMessage ? 'Bitte analysieren Sie das Dokument.' : ''),
           },
           files: files?.map(file => ({
-            type: file.type.startsWith('application/pdf') ? 'pdf_file' : 'image_file',
+            type: 'image_file' as const,
             data: 'uploading'
           }))
         },
@@ -105,8 +105,9 @@ export const Chatbot: React.FC<ChatbotProps> = ({
         fileIds = await Promise.all(files.map(async file => {
           const response = await uploadFile(file);
           return {
-            type: response.file_type,
-            data: response.file_id
+            type: 'image_file' as const,
+            data: response.file_id,
+            extracted_text: response.extracted_text
           };
         }));
       }

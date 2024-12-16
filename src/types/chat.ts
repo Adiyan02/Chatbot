@@ -44,9 +44,15 @@ export type MessageContent = {
     text: string;
   };
   files?: {
-    type: 'image_url' | 'image_file';
+    type: FileType;
     data: string;
+    extracted_text?: string;
   }[];
 };
 
-export type FileType = 'image_file' | 'pdf_file';
+export type FileType = "pdf_file" | "image_file" | "image_url";
+
+interface FileContent {
+  type: FileType;
+  data: string;
+}

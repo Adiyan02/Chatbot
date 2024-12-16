@@ -6,6 +6,8 @@ import io
 import re
 import os
 from werkzeug.utils import secure_filename
+from PIL import Image
+import pytesseract
 
 from services.openai_service import client
 from services.api_service import (
@@ -114,19 +116,24 @@ def chat():
     try:
         data = request.get_json()
         print("Received data:", data)
-        
+        extracted_text = ""
         # Attachments korrekt formatieren
         attachments = []
+        user_message_text = ""
         if data.get("attachments"):
             attachments = [{
                 "file_id": file_id,
                 "tools": [{"type": "file_search"}],
             } for file_id in data.get("attachments")]
-
+        if data.get("chatverlauf").get("content").get('files')[0].get('extracted_text'):
+            extracted_text = data.get("chatverlauf").get("content").get('files')[0].get('extracted_text')
+            user_message_text =  " << Es wurden die Texten mit OCR aus dem Bild extrahieren können, was die gegeben wurde: " + extracted_text + " >>" + " User: " + data.get("chatverlauf").get("content").get("text").get("text")
+        else:
+            user_message_text = data.get("chatverlauf").get("content").get("text").get("text")  
         # Erstelle die Nachricht mit Text
         user_message = [{
             "type": "text", 
-            "text": data.get("chatverlauf").get("content").get("text").get("text"),
+            "text": user_message_text,
         }]
         company = data.get("companies")[0]
         print("company: ",company)
@@ -141,6 +148,7 @@ def chat():
                             "file_id": file.get('data')
                         }
                     })
+                    extracted_text = file.get('extracted_text')
 
         thread_id = data.get("thread_id")
         tools_used = []
@@ -148,6 +156,7 @@ def chat():
         thread = None
         if not thread_id:
             thread = client.beta.threads.create()
+
         message = client.beta.threads.messages.create(
             thread_id=thread_id or thread.id,
             role="user",
@@ -157,6 +166,7 @@ def chat():
         run = client.beta.threads.runs.create_and_poll(
                 thread_id = thread_id or thread.id,
                 assistant_id="asst_SUrRky1PsAt8CJFySbv7fZvf",
+                model= "gpt-4o" if data.get("chatverlauf").get("content").get('files') else "gpt-4o-mini",
                 instructions=
                 "Du bist ein virtueller Assistent, der als Plugin für die Fahrer-App eines Unternehmens dient, um effizient mit Daten umzugehen und verschiedene betriebliche Aufgaben zu unterstützen. Und kein Assistent, der als allgemeiner Chatbot dient."
                 "Zuordnung von Strafzetteln zu Fahrern: Identifiziere den Fahrer, dem ein Strafzettel zugeordnet werden muss."
@@ -217,6 +227,8 @@ def chat():
             # Formatiere den Text vor dem Senden
             text_message = format_markdown_text(text_message)
             
+            if extracted_text:
+                text_message + " << Es wurden die Texten mit OCR aus dem Bild extrahieren können, was die gegeben wurde: " + extracted_text + " >>"
             return jsonify({
                 'success': True,
                 'response': {
@@ -345,6 +357,7 @@ def serve_file(filename):
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
     try:
+        extracted_text = ""
         file_type = None
         if 'file' not in request.files:
             return jsonify({'error': 'Keine Datei gefunden'}), 400
@@ -375,7 +388,15 @@ def upload_file():
                     file=file_data,
                     purpose=purpose
                 )
-            
+            print("openai_file: ",openai_file)
+            if file_type == "image_file":
+                try:
+                  image = Image.open(temp_path)
+                  extracted_text = pytesseract.image_to_string(image, lang='deu')  # 'deu' für Deutsch, 'eng' für Englisch
+                  print("Extrahierter Text:")
+                  print(extracted_text)
+                except Exception as e:
+                  print("Fehler beim OCR:", str(e))
             
             # Temporäre Datei löschen
             os.remove(temp_path)
@@ -383,7 +404,8 @@ def upload_file():
             return jsonify({
                 'success': True,
                 'file_id': openai_file.id,
-                'file_type': file_type
+                'file_type': file_type,
+                'extracted_text': extracted_text
             })
             
     except Exception as e:
