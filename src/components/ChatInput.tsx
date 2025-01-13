@@ -1,5 +1,20 @@
 import React, { useState, useRef } from 'react';
-import { Send, Paperclip, Camera, Image, X, FileText } from 'lucide-react';
+import { 
+  Box,
+  TextField,
+  IconButton,
+  Paper,
+  Typography,
+  CircularProgress
+} from '@mui/material';
+import {
+  Send as SendIcon,
+  AttachFile as AttachFileIcon,
+  Camera as CameraIcon,
+  Image as ImageIcon,
+  Close as CloseIcon,
+  Description as FileTextIcon
+} from '@mui/icons-material';
 import { uploadFile } from '../utils/api';
 
 interface ChatInputProps {
@@ -152,56 +167,131 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
       {selectedFile && (
-        <div className="flex gap-2 px-2">
+        <Box sx={{ display: 'flex', gap: 1, px: 1 }}>
           {selectedFile.map((file, index) => (
-            <div 
+            <Paper
               key={index}
-              className="relative bg-gray-100 rounded-lg p-2 flex items-center gap-2 group"
+              sx={{
+                position: 'relative',
+                p: 1,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1
+              }}
             >
               {file.type.startsWith('application/pdf') ? (
-                <FileText className="h-5 w-5 text-gray-500" />
+                <FileTextIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
               ) : (
-                <Image className="h-5 w-5 text-gray-500" />
+                <ImageIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
               )}
-              <span className="text-sm text-gray-600">
+              <Typography variant="body2" color="text.secondary">
                 {file.name}
-              </span>
+              </Typography>
               {isUploading ? (
-                <div className="absolute -top-2 -right-2">
-                  <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full" />
-                </div>
+                <CircularProgress
+                  size={20}
+                  sx={{
+                    position: 'absolute',
+                    top: -8,
+                    right: -8
+                  }}
+                />
               ) : (
-                <button
-                  type="button"
+                <IconButton
+                  size="small"
                   onClick={() => {
                     setSelectedFile(null);
                     setUploadedFileId(null);
                   }}
-                  className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 text-white hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                  sx={{
+                    position: 'absolute',
+                    top: -8,
+                    right: -8,
+                    bgcolor: 'error.main',
+                    color: 'white',
+                    '&:hover': {
+                      bgcolor: 'error.dark'
+                    }
+                  }}
                 >
-                  <X className="h-3 w-3" />
-                </button>
+                  <CloseIcon sx={{ fontSize: 16 }} />
+                </IconButton>
               )}
-            </div>
+            </Paper>
           ))}
-        </div>
+        </Box>
       )}
-      
-      <form onSubmit={handleSubmit} className="flex flex-col gap-1 rounded-lg border-gray-300 border">
-        <textarea
-          ref={textareaRef}
+
+      <Box component="form" onSubmit={handleSubmit}>
+        <TextField
+          fullWidth
+          multiline
+          maxRows={4}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           disabled={disabled}
           placeholder={InputMessage}
-          rows={1}
-          style={{ minHeight: '44px', height: 'auto', maxHeight: '200px' }}
-          onInput={(e) => {
-            const target = e.target as HTMLTextAreaElement;
-            target.style.height = 'auto';
-            target.style.height = `${Math.min(target.scrollHeight, 200)}px`;
+          variant="outlined"
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              paddingBottom: '50px', // Platz für die Buttons
+            }
+          }}
+          InputProps={{
+            endAdornment: (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  bottom: 8,
+                  paddingTop: 10,
+                  left: 6,
+                  right: 6,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  pt: 1,
+                }}
+              >
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  {allowFileUpload && (
+                    <IconButton
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={disabled || isUploading}
+                      size="small"
+                      sx={{ 
+                        color: 'text.secondary',
+                        '&:hover': { color: 'text.primary' }
+                      }}
+                    >
+                      <AttachFileIcon />
+                    </IconButton>
+                  )}
+                  {allowCamera && isMobile && (
+                    <IconButton
+                      onClick={handleCameraCapture}
+                      disabled={disabled || isUploading}
+                      size="small"
+                      sx={{ 
+                        color: 'text.secondary',
+                        '&:hover': { color: 'text.primary' }
+                      }}
+                    >
+                      <CameraIcon />
+                    </IconButton>
+                  )}
+                </Box>
+                <IconButton
+                  type="submit"
+                  disabled={disabled || isUploading || (!input.trim() && !uploadedFileId)}
+                  color="primary"
+                  size="small"
+                >
+                  <SendIcon />
+                </IconButton>
+              </Box>
+            ),
           }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -211,50 +301,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               }
             }
           }}
-          className="w-full px-4 py-2 
-            focus:outline-none focus:inline-none resize-none
-            text-sm sm:text-base"
         />
-
-        <div className="flex justify-between items-center px-4 pb-1">
-          <div className="flex gap-1">
-            {allowFileUpload && (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="p-1 text-gray-500 hover:text-gray-700 disabled:opacity-50 flex items-center gap-2"
-                disabled={disabled || isUploading}
-                title="Datei auswählen"
-              >
-                {isUploading ? (
-                  <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
-                ) : (
-                  <Paperclip className="h-5 w-5" />
-                )}
-              </button>
-            )}
-
-            {allowCamera && isMobile && (
-              <button
-                type="button"
-                onClick={handleCameraCapture}
-                className="p-1 text-gray-500 hover:text-gray-700 disabled:opacity-50"
-                disabled={disabled || isUploading}
-                title="Foto aufnehmen"
-              >
-                <Camera className="h-5 w-5" />
-              </button>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            disabled={disabled || isUploading || (!input.trim() && !uploadedFileId)}
-            className="p-1 text-blue-500 cursor-pointer hover:text-blue-800 disabled:opacity-50 flex items-center gap-2"
-          >
-            <Send className="h-5 w-5" />
-          </button>
-        </div>
 
         {allowFileUpload && (
           <input
@@ -262,10 +309,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             ref={fileInputRef}
             onChange={handleFileChange}
             accept="image/*,application/pdf"
-            className="hidden"
+            style={{ display: 'none' }}
           />
         )}
-      </form>
-    </div>
+      </Box>
+    </Box>
   );
 };

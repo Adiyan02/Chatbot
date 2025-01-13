@@ -2,7 +2,22 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Message, ChatRequest } from '../types/chat';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
-import { MessageCircle, X, Minimize2, ChevronDown } from 'lucide-react';
+import { 
+  Box, 
+  IconButton, 
+  Paper, 
+  Typography,
+  Select,
+  MenuItem,
+  FormControl,
+  styled
+} from '@mui/material';
+import {
+  Chat as ChatIcon,
+  Close as CloseIcon,
+  Minimize as MinimizeIcon,
+  ExpandMore as ExpandMoreIcon
+} from '@mui/icons-material';
 import { sendMessage, uploadFile } from '../utils/api';
 
 interface ChatbotProps {
@@ -15,6 +30,43 @@ interface ChatbotProps {
 }
 
 type SupportedLanguages = 'de' | 'en' | 'ar' | 'tr';
+
+// Styled Components
+const ChatbotContainer = styled(Box)(({ theme }) => ({
+  position: 'fixed',
+  zIndex: 50,
+  width: '100%',
+  height: '100dvh',
+  [theme.breakpoints.up('sm')]: {
+    width: '500px',
+    height: 'auto'
+  }
+}));
+
+const ChatbotWindow = styled(Paper)(({ theme }) => ({
+  width: '100%',
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  [theme.breakpoints.up('sm')]: {
+    borderRadius: theme.shape.borderRadius,
+    boxShadow: theme.shadows[10]
+  }
+}));
+
+const Header = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  padding: theme.spacing(2),
+  backgroundColor: theme.palette.primary.main,
+  color: theme.palette.primary.contrastText,
+  borderRadius: 0,
+  [theme.breakpoints.up('sm')]: {
+    borderTopLeftRadius: theme.shape.borderRadius,
+    borderTopRightRadius: theme.shape.borderRadius
+  }
+}));
 
 export const Chatbot: React.FC<ChatbotProps> = ({ 
   companys, 
@@ -198,38 +250,44 @@ export const Chatbot: React.FC<ChatbotProps> = ({
 
   return (
     <>
-      {/* Chatbot Toggle Button */}
-      <button
+      <IconButton
         onClick={() => setIsOpen(true)}
-        className={`fixed ${positionClasses[position]} z-50 bg-blue-500 text-white 
-          rounded-full p-4 shadow-lg hover:bg-blue-600 transition-all duration-300
-          ${isOpen ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`}
+        sx={{
+          position: 'fixed',
+          bottom: 32,
+          right: position === 'bottom-right' ? 32 : 'auto',
+          left: position === 'bottom-left' ? 32 : 'auto',
+          backgroundColor: 'primary.main',
+          color: 'white',
+          '&:hover': {
+            backgroundColor: 'primary.dark'
+          },
+          display: isOpen ? 'none' : 'flex'
+        }}
       >
-        <MessageCircle className="h-6 w-6" />
-      </button>
+        <ChatIcon />
+      </IconButton>
 
-      {/* Chatbot Window */}
-      <div className={`fixed z-50 
-        w-full h-[100dvh] sm:w-[500px] sm:h-auto
-        ${position === 'bottom-right' ? 'right-0 sm:right-4' : 'left-0 sm:left-4'}
-        bottom-0 sm:bottom-4
-        m-0 sm:m-4
-        transition-all duration-300 ease-in-out
-        ${isOpen 
-          ? 'translate-y-0 opacity-100' 
-          : 'translate-y-[100vh] sm:translate-y-[50vh] opacity-0 pointer-events-none'}`}
+      <ChatbotContainer
+        sx={{
+          right: position === 'bottom-right' ? { xs: 0, sm: 32 } : 'auto',
+          left: position === 'bottom-left' ? { xs: 0, sm: 32 } : 'auto',
+          bottom: { xs: 0, sm: 32 },
+          transform: isOpen ? 'translateY(0)' : 'translateY(100vh)',
+          opacity: isOpen ? 1 : 0,
+          transition: 'all 0.3s ease-in-out'
+        }}
       >
-        <div className={`bg-white rounded-none sm:rounded-lg shadow-xl w-full h-full 
-          flex flex-col transition-all duration-300
-          ${isMinimized ? 'sm:h-[60px]' : ''}`}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between bg-blue-500 text-white p-4 rounded-none sm:rounded-t-lg">
-            <div className="flex items-center gap-4">
-              <h2 className="font-semibold">{greetingsTitle[user.lang]}</h2>
+        <ChatbotWindow>
+          <Header>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Typography variant="h6" >
+                {greetingsTitle[user.lang]}
+              </Typography>
+              
               {!isDriver && (
-                <div className="relative group">
-                  <select
+                <FormControl size="small" variant="outlined">
+                  <Select
                     value={selectedCompany.id}
                     onChange={(e) => {
                       const company = companys.find(c => c.id === e.target.value);
@@ -249,55 +307,63 @@ export const Chatbot: React.FC<ChatbotProps> = ({
                         setThreadId(null);
                       }
                     }}
-                    className="appearance-none bg-transparent text-white/90 text-sm 
-                      pl-2 pr-7 py-1 rounded border border-white/20 
-                      cursor-pointer hover:bg-white/10 focus:outline-none 
-                      focus:border-white/30 transition-all"
+                    sx={{
+                      color: 'white',
+                      '.MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'rgba(255, 255, 255, 0.3)'
+                      },
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'rgba(255, 255, 255, 0.5)'
+                      }
+                    }}
                   >
                     {companys.map(company => (
-                      <option 
-                        key={company.id} 
-                        value={company.id}
-                        className="bg-blue-600 text-white"
-                      >
+                      <MenuItem key={company.id} value={company.id}>
                         {company.name}
-                      </option>
+                      </MenuItem>
                     ))}
-                  </select>
-                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 
-                    text-white/70 group-hover:text-white/90 pointer-events-none transition-colors" />
-                </div>
+                  </Select>
+                </FormControl>
               )}
-            </div>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => setIsMinimized(!isMinimized)}
-                className="hover:bg-blue-600 p-1 rounded sm:block hidden"
-              >
-                <Minimize2 className="h-5 w-5" />
-              </button>
-              <button 
-                onClick={() => setIsOpen(false)}
-                className="hover:bg-blue-600 p-1 rounded"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
+            </Box>
 
-          {/* Chat Container */}
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <IconButton
+                color="inherit"
+                onClick={() => setIsMinimized(!isMinimized)}
+                sx={{ display: { xs: 'none', sm: 'flex' } }}
+              >
+                <MinimizeIcon />
+              </IconButton>
+              <IconButton color="inherit" onClick={() => setIsOpen(false)}>
+                <CloseIcon />
+              </IconButton>
+            </Box>
+          </Header>
+
           {!isMinimized && (
-            <div className="flex-1 flex flex-col h-full min-h-[50vh] sm:min-h-[30vh] max-h-[100vh] sm:max-h-[70vh]">
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column',
+              height: '100%',
+              minHeight: { xs: '50vh', sm: '30vh' },
+              maxHeight: { xs: '100vh', sm: '70vh' }
+            }}>
+              <Box sx={{ 
+                flexGrow: 1,
+                overflow: 'auto',
+                p: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2
+              }}>
                 {messages.map((message) => (
                   <ChatMessage key={message.id} message={message} />
                 ))}
                 <div ref={messagesEndRef} />
-              </div>
+              </Box>
 
-              {/* Input */}
-              <div className="p-4 border-t mt-auto bg-white">
+              <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
                 <ChatInput
                   onSendMessage={handleSendMessage}
                   disabled={isProcessing}
@@ -305,11 +371,11 @@ export const Chatbot: React.FC<ChatbotProps> = ({
                   allowFileUpload={allowFileUpload}
                   allowCamera={allowCamera}
                 />
-              </div>
-            </div>
+              </Box>
+            </Box>
           )}
-        </div>
-      </div>
+        </ChatbotWindow>
+      </ChatbotContainer>
     </>
   );
 }; 

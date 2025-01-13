@@ -46,7 +46,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
     ul: (props: any) => <ul className="list-disc list-inside mb-3 pl-4" {...props} />,
     ol: (props: any) => <ol className="list-decimal pl-4 mb-3" {...props} />,
     li: (props: any) => <li className="leading-normal mb-2 pl-1" {...props} />,
-    p: (props: any) => <p className="leading-relaxed whitespace-pre-line mb-3" {...props} />,
+    p: (props: any) => <p className="leading-relaxed whitespace-pre-line mb-2" {...props} />,
   
     // Container und Inline-Elemente
     div: (props: any) => <div className="mb-2" {...props} />,

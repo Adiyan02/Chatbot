@@ -30,7 +30,7 @@ UPLOAD_FOLDER = 'uploads'
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
-def update_annotations(annotations, text_value,  base_url="http://127.0.0.1:5000"):
+def update_annotations(annotations, text_value,  base_url="http://49.13.25.32:5000"):
     # Iterate over content to find annotations and update paths
     print("update_annotations runs")
     for annotation in annotations:
