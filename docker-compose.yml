@@ -1,5 +1,42 @@
 version: '3.8'
 
+#services:
+#  backend:
+#    build:
+#      context: ./server
+#      dockerfile: Dockerfile
+#    ports:
+#      - "5000:5000"
+#    volumes:
+#      - ./server:/app
+#      - ./server/uploads:/app/uploads
+#    environment:
+#      - FLASK_APP=app.py
+#      - FLASK_ENV=production
+#      - OPENAI_API_KEY=${OPENAI_API_KEY}
+#      - AUTHORIZATION=${AUTHORIZATION}
+#    networks:
+#      - app-network
+#    restart: unless-stopped
+
+#  frontend:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#      args:
+#        - VITE_API_URL=http://backend:5000
+#    ports:
+#      - "80:80"
+#    environment:
+#      - NODE_ENV=production
+#    networks:
+#      - app-network
+#    restart: unless-stopped
+
+#networks:
+#  app-network:
+#    driver: bridge
+
 services:
   backend:
     build:
@@ -15,24 +52,8 @@ services:
       - FLASK_ENV=production
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - AUTHORIZATION=${AUTHORIZATION}
-    networks:
-      - app-network
-    restart: unless-stopped
-
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - VITE_API_URL=http://backend:5000
-    ports:
-      - "80:80"
-    environment:
-      - NODE_ENV=production
-    networks:
-      - app-network
     restart: unless-stopped
 
 networks:
-  app-network:
+  default:
     driver: bridge

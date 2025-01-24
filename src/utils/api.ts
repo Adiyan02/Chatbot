@@ -1,9 +1,6 @@
 import { ChatRequest } from '../types/chat';
-<<<<<<< HEAD
-const API_URL = 'http://49.13.25.32:5000/';
-=======
+
 const API_URL = 'http://3.78.122.171:5000/';
->>>>>>> 51efdf5 (update Projekt)
 
 export const sendMessage = async (chatRequest: ChatRequest) => {
   const pdfFiles = chatRequest.chatverlauf[0].content.files?.filter(f => f.type === 'pdf_file') || [];

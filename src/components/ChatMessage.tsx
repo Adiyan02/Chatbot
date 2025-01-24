@@ -109,36 +109,8 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
         color: 'text.secondary'
       }} {...props} />
     ),
-<<<<<<< HEAD
-  
-    // Listen
-    ul: (props: any) => <ul className="list-disc list-inside mb-3 pl-4" {...props} />,
-    ol: (props: any) => <ol className="list-decimal pl-4 mb-3" {...props} />,
-    li: (props: any) => <li className="leading-normal mb-2 pl-1" {...props} />,
-    p: (props: any) => <p className="leading-relaxed whitespace-pre-line mb-2" {...props} />,
-  
-    // Container und Inline-Elemente
-    div: (props: any) => <div className="mb-2" {...props} />,
-    span: (props: any) => <span className="inline" {...props} />,
-    
-    // Horizontale Linie
-    hr: (props: any) => <hr className="border-gray-300 my-4" {...props} />,
-  
-    // Links
-    a: (props: any) => <a className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
-  
-    // Typografische Elemente
-    strong: (props: any) => <strong className="font-semibold" {...props} />,
-    em: (props: any) => <em className="italic" {...props} />,
-    del: (props: any) => <del className="line-through" {...props} />,
-  
-    // Tabellen
-    table: (props: any) => (
-      <table className="min-w-full border-collapse border border-gray-300 mt-2 mb-4" {...props} />
-=======
     ul: ({ ...props }) => (
       <Box component="ul" sx={{ pl: 4, mb: 2 }} {...props} />
->>>>>>> 51efdf5 (update Projekt)
     ),
     ol: ({ ...props }) => (
       <Box component="ol" sx={{ pl: 4, mb: 2 }} {...props} />
