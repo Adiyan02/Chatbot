@@ -8,6 +8,8 @@ import os
 from werkzeug.utils import secure_filename
 from PIL import Image
 import pytesseract
+import cv2
+import numpy as np
 
 from services.openai_service import client
 from services.api_service import (
@@ -22,6 +24,7 @@ from services.api_service import (
 # Konfiguration des Loggings
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 app = Flask(__name__)
 CORS(app)  # Erlaubt standardmäßig alle Origins
@@ -30,7 +33,11 @@ UPLOAD_FOLDER = 'uploads'
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
+<<<<<<< HEAD
 def update_annotations(annotations, text_value,  base_url="http://49.13.25.32:5000"):
+=======
+def update_annotations(annotations, text_value,  base_url="https://3.78.122.171:5000"):
+>>>>>>> 51efdf5 (update Projekt)
     # Iterate over content to find annotations and update paths
     print("update_annotations runs")
     for annotation in annotations:
@@ -125,7 +132,7 @@ def chat():
                 "file_id": file_id,
                 "tools": [{"type": "file_search"}],
             } for file_id in data.get("attachments")]
-        if data.get("chatverlauf").get("content").get('files')[0].get('extracted_text'):
+        if data.get("chatverlauf").get("content").get('files'):
             extracted_text = data.get("chatverlauf").get("content").get('files')[0].get('extracted_text')
             user_message_text =  " << Es wurden die Texten mit OCR aus dem Bild extrahieren können, was die gegeben wurde: " + extracted_text + " >>" + " User: " + data.get("chatverlauf").get("content").get("text").get("text")
         else:
@@ -354,6 +361,65 @@ def chat():
 def serve_file(filename):
     return send_from_directory('static/files', filename)
 
+def perform_ocr_with_method(image, method):
+    """Führt OCR mit verschiedenen Bildverarbeitungsmethoden durch und speichert die Ergebnisse als Bilddateien"""
+    try:
+        processed_image = None
+        if method == "original":
+            processed_image = image
+        
+        elif method == "threshold":
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            processed_image = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+        
+        elif method == "adaptive":
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            denoised = cv2.fastNlMeansDenoising(gray)
+            processed_image = cv2.adaptiveThreshold(denoised, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+        
+        elif method == "enhanced":
+            lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+            l, a, b = cv2.split(lab)
+            clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+            cl = clahe.apply(l)
+            enhanced = cv2.merge((cl,a,b))
+            processed_image = cv2.cvtColor(enhanced, cv2.COLOR_LAB2BGR)
+        
+        if processed_image is not None:
+            # Speichere das verarbeitete Bild
+            output_path = f"output_{method}.png"
+            cv2.imwrite(output_path, processed_image)
+            logger.info(f"Processed image saved as {output_path}")
+            text = pytesseract.image_to_string(Image.fromarray(processed_image), lang='deu')
+            return text
+    except Exception as e:
+        logger.error(f"Error in OCR method {method}: {str(e)}")
+        return ""
+
+def get_best_ocr_result(image):
+    """Wählt das beste OCR-Ergebnis aus verschiedenen Methoden"""
+    methods = ["original", "threshold", "adaptive", "enhanced"]
+    results = {}
+    
+    # Skaliere das Bild für bessere OCR-Ergebnisse
+    scaled = cv2.resize(image, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+    
+    for method in methods:
+        text = perform_ocr_with_method(image, method)
+        # Bewerte die Qualität des Ergebnisses
+        score = len(re.findall(r'[\w\d]+', text))  # Zählt Wörter und Zahlen
+        results[method] = {
+            'text': text,
+            'score': score
+        }
+        logger.info(f"Method {method} score: {score}")
+    
+    # Wähle die Methode mit dem höchsten Score
+    best_method = max(results.items(), key=lambda x: x[1]['score'])
+    logger.info(f"Best method: {best_method[0]}")
+    
+    return best_method[1]['text']
+
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
     try:
@@ -366,15 +432,12 @@ def upload_file():
             return jsonify({'error': 'Keine Datei ausgewählt'}), 400
 
         if file:
-            # Datei temporär speichern
             temp_path = os.path.join(UPLOAD_FOLDER, secure_filename(file.filename))
             file.save(temp_path)
             
-            # Dateityp bestimmen
             mime_type = file.content_type
-            print("Detected MIME type:", mime_type)
-            
-            # Purpose basierend auf MIME-Typ setzen
+            logger.info(f"Detected MIME type: {mime_type}")
+
             if mime_type == 'application/pdf':
                 purpose = "assistants"
                 file_type = "pdf_file"
@@ -382,21 +445,26 @@ def upload_file():
                 file_type = "image_file"
                 purpose = "vision"
                 
-            # OpenAI File erstellen
             with open(temp_path, 'rb') as file_data:
                 openai_file = client.files.create(
                     file=file_data,
                     purpose=purpose
                 )
-            print("openai_file: ",openai_file)
+            logger.info(f"openai_file: {openai_file}")
+
             if file_type == "image_file":
                 try:
-                  image = Image.open(temp_path)
-                  extracted_text = pytesseract.image_to_string(image, lang='deu')  # 'deu' für Deutsch, 'eng' für Englisch
-                  print("Extrahierter Text:")
-                  print(extracted_text)
+                    # Bild laden
+                    image = cv2.imread(temp_path)
+                    if image is None:
+                        raise Exception("Konnte Bild nicht laden")
+                    
+                    # Beste OCR-Methode anwenden
+                    extracted_text = get_best_ocr_result(image)
+                    logger.info(f"Extracted text: {extracted_text}")
+                    
                 except Exception as e:
-                  print("Fehler beim OCR:", str(e))
+                    logger.error(f"Error during OCR: {str(e)}")
             
             # Temporäre Datei löschen
             os.remove(temp_path)
@@ -409,7 +477,7 @@ def upload_file():
             })
             
     except Exception as e:
-        print("Upload error:", str(e))
+        logger.error(f"Upload error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':

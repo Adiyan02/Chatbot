@@ -3,10 +3,17 @@ FROM python:3.11-slim
 # Setze Arbeitsverzeichnis
 WORKDIR /app
 
+# Installiere Tesseract OCR und das deutsche Sprachpaket
+RUN apt-get update && apt-get install -y \
+    tesseract-ocr \
+    tesseract-ocr-deu \
+    libtesseract-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 # Kopiere Abhängigkeiten
 COPY requirements.txt .
 
-# Installiere Abhängigkeiten
+# Installiere Python-Abhängigkeiten
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Kopiere Projektdateien
